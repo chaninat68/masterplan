@@ -1,0 +1,20 @@
+# ข้อมูลจริง - ห้ามขึ้น GitHub (repo เป็น public)
+*.xlsx
+*.xls
+*.csv
+reference/
+preview/master-planning-preview.html
+preview/*.json
+
+# env / secrets
+.env*
+!.env.example
+
+# node / next
+node_modules/
+.next/
+out/
+coverage/
+.vercel/
+.DS_Store
+Thumbs.db
