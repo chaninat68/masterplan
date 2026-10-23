@@ -301,7 +301,32 @@ tr.wkrow span{color:var(--ink-2)}
 .shift.B{background:var(--i-amber);color:var(--warn-ink)}
 tr.flash td{animation:flash 1.6s ease}
 @keyframes flash{0%,40%{background:color-mix(in srgb,var(--accent) 22%,transparent)}}
-/* ปฏิทิน */
+/* แท็บรายวัน v3: แผนล่วงหน้าแบบย่อ + เฉพาะวันที่มีงาน */
+.sec-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:12.5px}
+.sec-h b{font-size:14.5px;font-weight:600}
+.sec-h .grow{flex:1}
+.lg-y,.lg-r{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 4px -1px 8px;background:var(--warn-soft);border:1px solid var(--warn)}
+.lg-r{background:var(--bad-soft);border-color:var(--bad)}
+.fut-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.fweek{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center;padding:6px 0;border-top:1px dashed var(--line)}
+.fweek:first-of-type{border-top:0}
+.fw-l{font-size:12.5px;color:var(--ink-2)}
+.fw-l b{display:block;color:var(--ink);font-weight:600;font-size:13.5px}
+.fdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.fday{display:flex;flex-direction:column;align-items:center;border-radius:10px;padding:4px 2px;background:var(--surface-2);color:var(--muted);font-variant-numeric:tabular-nums;position:relative}
+.fday small{font-size:10.5px}
+.fday.has{background:var(--accent-soft);color:var(--ink);font-weight:600}
+.fday.noted::after{content:"";position:absolute;top:4px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--warn)}
+.fday.off{opacity:.35}
+.res{display:grid;grid-template-columns:auto 70px 40px;gap:8px;align-items:center;justify-content:end}
+.res .pa{min-width:0}
+.res .pa i.a{top:0;bottom:0;left:0}
+.pct{font-size:12px;font-weight:600;text-align:right}
+.zero{color:var(--bad-ink);font-weight:600}
+table.days .note-add{opacity:0;transition:opacity .15s}
+table.days tr:hover .note-add,table.days tr.missing .note-add{opacity:1}
+tr.missing .note-add{color:var(--bad-ink)}
+@media (max-width:640px){.fweek{grid-template-columns:1fr}}/* ปฏิทิน */
 .cals{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;max-width:100%}
 .cal{min-width:0}
 .cal h4{margin:0 0 8px;font-size:14px;font-weight:600}
@@ -455,7 +480,7 @@ function actualMap(code){
   return m;
 }
 function planMap(code){ const m=Object.assign({}, P[code].plan, store.edits.plan[code]||{}); for(const d in m) if(!m[d]) delete m[d]; return m; }
-function noteOf(code,d){ const k=code+'|'+d; if(k in store.notes) return store.notes[k]; const v=P[code]?.notes?.[d]; return v==null?'':(v==='x'?'ไม่มีการตอก (x)':v); }
+function noteOf(code,d){ const k=code+'|'+d; if(k in store.notes) return store.notes[k]; const v=P[code]?.notes?.[d]; return v==null?'':(v==='x'?'ไม่มีการตอก':v); }
 function coNote(d){ return store.notes['*|'+d]||''; }
 function prog(code){
   if(memo[code]) return memo[code];
@@ -509,7 +534,7 @@ const ROLES={
   drive_team:{label:'ฝ่ายตอก',name:'ฝ่ายตอก',pages:['drive','daily','plan'],home:'drive',edit:false},
   admin:{label:'ผู้ดูแลระบบ',name:'แอดมิน',pages:Object.keys(PAGES),home:'overview',edit:true}
 };
-const S={role:'manager',page:'overview',q:'',planTab:'ongoing',expanded:new Set(),fullDays:new Set(),dtab:{},day:null,chartRange:30,imports:[],pending:null};
+const S={role:'manager',page:'overview',q:'',planTab:'ongoing',expanded:new Set(),fullDays:new Set(),fullPlan:new Set(),showEmpty:new Set(),dtab:{},day:null,chartRange:30,imports:[],pending:null};
 try{ const r=localStorage.getItem('mp-role'); if(r&&ROLES[r]) S.role=r; }catch(e){}
 S.page=ROLES[S.role].home;
 const canEdit=()=>ROLES[S.role].edit;
@@ -712,34 +737,61 @@ function dayKeys(c){ const p=P[c]; return Object.keys(Object.assign({},actualMap
 const wkStart=d=>addD(d,-((dow(d)+6)%7));   // สัปดาห์เริ่มวันจันทร์
 function daysTab(c){
   const p=P[c], a=actualMap(c), pl=planMap(c), ks=dayKeys(c);
-  let from=ks.length?ks.reduce((x,y)=>x<y?x:y):addD(ASOF,-14), to=ks.length?ks.reduce((x,y)=>x>y?x:y):addD(ASOF,7);
-  if(to<addD(ASOF,7)&&p.status!=='completed') to=addD(ASOF,7);
-  const full=S.fullDays.has(c);
-  let winFrom=full?from:[wkStart(addD(ASOF,-20)),from].sort()[1]; if(winFrom>to) winFrom=from;
+  const from=ks.length?ks.reduce((x,y)=>x<y?x:y):addD(ASOF,-14);
+  const lastPlan=Object.keys(pl).filter(d=>d>ASOF).sort().pop();
   const byDay={}; for(const l of (LBYP[c]||[])) (byDay[l.d]||(byDay[l.d]=[])).push(l);
-  const days=range(winFrom,to).reverse();
+  // ---- แผนล่วงหน้า: สัปดาห์ละแถว (จ–อา) ----
+  const futWeeks=[]; if(lastPlan&&p.status!=='completed'&&p.status!=='cancelled'){ for(let w=wkStart(addD(ASOF,1)); w<=lastPlan; w=addD(w,7)) futWeeks.push(w); }
+  const fullPlan=S.fullPlan.has(c), futShown=fullPlan?futWeeks:futWeeks.slice(0,4);
+  const futHtml = futWeeks.length? `<div class="fut-box">
+    <div class="sec-h"><b>แผนล่วงหน้า</b><span class="muted">${futWeeks.length} สัปดาห์ · รวม ${fN(sum(Object.keys(pl).filter(d=>d>ASOF),d=>pl[d]),1)} ต้น${canEdit()?' · คลิกตัวเลขเพื่อแก้แผน':''}</span></div>
+    ${futShown.map(w=>{ const ds=range(w,addD(w,6)); return `<div class="fweek"><div class="fw-l">${fDs(w)} – ${fDs(addD(w,6))}<b>${fN(sum(ds,d=>d>ASOF?(pl[d]||0):0),1)} ต้น</b></div><div class="fdays">${ds.map(d=>{ const pv=pl[d]||0, note=noteOf(c,d)||coNote(d), pe=store.edits.plan[c]&&d in store.edits.plan[c];
+        return d<=ASOF? `<span class="fday off"><small>${TH_D[dow(d)]} ${+d.slice(8)}</small>·</span>` : `<span class="fday ${pv?'has':''} ${note?'noted':''}" title="${fD(d)}${note?' · '+esc(note):''}"><small>${TH_D[dow(d)]} ${+d.slice(8)}</small><span class="ed ${pe?'edited':''}" data-edit="plan" data-code="${c}" data-date="${d}">${pv?fN(pv,1):'–'}</span></span>`; }).join('')}</div></div>`; }).join('')}
+    ${futWeeks.length>4?`<button class="link" data-fullplan="${c}" style="margin-top:6px">${fullPlan?'ย่อเหลือ 4 สัปดาห์':`แสดงแผนทั้งหมด (${futWeeks.length} สัปดาห์)`}</button>`:''}
+  </div>`:'';
+  // ---- ผลงานที่ผ่านมา: เฉพาะวันที่มีแผน/ผลงาน/หมายเหตุ ----
+  const full=S.fullDays.has(c), showEmpty=S.showEmpty.has(c);
+  let winFrom=full?from:[wkStart(addD(ASOF,-20)),from].sort()[1]; if(winFrom>ASOF) winFrom=wkStart(ASOF);
+  const days=range(winFrom,ASOF).reverse();
   const groups=[]; for(const d of days){ const w=wkStart(d); let gp=groups[groups.length-1]; if(!gp||gp.w!==w){gp={w,days:[]};groups.push(gp);} gp.days.push(d); }
-  const mx=Math.max(1,...days.map(d=>Math.max(pl[d]||0,a[d]||0)));
-  return `<div class="card-h"><div class="sub">แถวเหลือง = มีหมายเหตุวันไม่มีการตอก · แถวแดง = มีแผนแต่ไม่มีผลงานและยังไม่มีเหตุผล${canEdit()?' · คลิกตัวเลข/หมายเหตุเพื่อแก้':''}</div><button class="btn ghost sm" data-full="${c}">${full?'แสดง 3 สัปดาห์ล่าสุด':'แสดงทั้งหมด'}</button></div>
-  <div class="tbl-wrap"><table class="days"><thead><tr><th>วันที่</th><th class="num">แผน</th><th class="num">ทำจริง</th><th style="width:130px">เทียบแผน</th><th>รายละเอียดการตอก (ปั้นจั่น · ขนาด · ยาว · กะ · ต้น)</th><th style="min-width:200px">หมายเหตุ</th></tr></thead><tbody>
-  ${groups.map(gp=>{ const wp=sum(gp.days,d=>pl[d]||0), wa=sum(gp.days,d=>d<=ASOF?(a[d]||0):0), past=gp.w<=ASOF;
-    return `<tr class="wkrow"><td colspan="6"><b>สัปดาห์ ${fDs(gp.w)} – ${fD(addD(gp.w,6))}</b><span>แผน ${fN(wp,1)} · ทำจริง ${past?fN(wa,1):'–'}${wp&&past?` · <b style="margin:0;color:var(--${wa>=wp?'good':'bad'}-ink)">${fN(wa/wp*100,0)}%</b>`:''}</span></td></tr>`
-      + gp.days.map(d=>dayRow(c,d,pl,a,byDay,mx)).join(''); }).join('')}
-  </tbody></table></div>`;
+  const busy=d=>(pl[d]||0)||(a[d]||0)||noteOf(c,d)||coNote(d)||(byDay[d]||[]).length;
+  const body=groups.map(gp=>{ const wp=sum(gp.days,d=>pl[d]||0), wa=sum(gp.days,d=>a[d]||0), shown=gp.days.filter(d=>showEmpty||busy(d)||d===ASOF), hidden=gp.days.length-shown.length;
+    const rate=wp?wa/wp*100:null;
+    return `<tr class="wkrow"><td colspan="5"><b>สัปดาห์ ${fDs(gp.w)} – ${fD(addD(gp.w,6))}</b><span>แผน ${fN(wp,1)} · ทำจริง ${fN(wa,1)}${rate!=null?` · <b style="margin:0;color:var(--${rate>=100?'good':rate>=80?'warn':'bad'}-ink)">${fN(rate,0)}%</b>`:''}${hidden?` <span class="muted">· ไม่มีงาน ${hidden} วัน</span>`:''}</span></td></tr>`
+      + (shown.length? rowsWithRuns(c,shown,pl,a,byDay,showEmpty) : `<tr><td colspan="5" class="muted" style="font-size:12.5px">ไม่มีแผนและผลงานในสัปดาห์นี้</td></tr>`); }).join('');
+  return `${futHtml}
+  <div class="sec-h" style="margin-top:${futHtml?'18px':'0'}"><b>ผลงานที่ผ่านมา</b><span class="muted">ล่าสุดอยู่บน · <span class="lg-y"></span>หยุดมีเหตุผล · <span class="lg-r"></span>มีแผนแต่ไม่ได้ตอก ยังไม่ระบุเหตุผล</span>
+    <span class="grow"></span><button class="btn ghost sm" data-showempty="${c}">${showEmpty?'ซ่อนวันว่าง':'แสดงวันว่าง'}</button><button class="btn ghost sm" data-full="${c}">${full?'3 สัปดาห์ล่าสุด':'ย้อนหลังทั้งหมด'}</button></div>
+  <div class="tbl-wrap"><table class="days"><thead><tr><th>วันที่</th><th class="num">แผน</th><th class="num" style="min-width:150px">ทำจริง</th><th>รายละเอียดการตอก (ปั้นจั่น · ขนาด · ยาว · กะ · ต้น)</th><th style="min-width:200px">หมายเหตุ</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
-function dayRow(c,d,pl,a,byDay,mx){
-  const pv=pl[d]||0, av=a[d]||0, note=noteOf(c,d), cn=coNote(d), ls=byDay[d]||[], past=d<=ASOF;
-  const cls = d===ASOF?'today': !past?'future': (av===0&&(note||cn))?'noday': (pv>0&&av===0)?'missing':'';
+// วันหยุดติดกันที่มีหมายเหตุเดียวกัน (ไม่มีแผน ไม่มีผลงาน) รวมเป็นแถวเดียว
+function rowsWithRuns(c,days,pl,a,byDay,showEmpty){
+  const out=[]; let run=null;
+  const flush=()=>{ if(!run) return; if(run.days.length<2) out.push(dayRow(c,run.days[0],pl,a,byDay));
+    else { const hi=run.days[0], lo=run.days[run.days.length-1];
+      out.push(`<tr class="noday"><td class="nowrap"><b style="font-weight:500">${TH_D[dow(lo)]}–${TH_D[dow(hi)]}</b> ${fDs(lo)} – ${fD(hi)}</td><td class="num muted">·</td><td class="num muted">·</td><td class="muted" style="font-size:12.5px">หยุด ${run.days.length} วัน${canEdit()?' · กด "แสดงวันว่าง" เพื่อแก้รายวัน':''}</td><td>${esc(run.note)}</td></tr>`); }
+    run=null; };
+  for(const d of days){
+    const idle=!showEmpty && !(pl[d]||0) && !(a[d]||0) && !(byDay[d]||[]).some(l=>l.qty>0) && d!==ASOF;
+    const note=idle? (noteOf(c,d)||coNote(d)) : '';
+    if(idle&&note){ if(run&&run.note===note) run.days.push(d); else { flush(); run={note,days:[d]}; } }
+    else { flush(); out.push(dayRow(c,d,pl,a,byDay)); }
+  }
+  flush(); return out.join('');
+}
+function dayRow(c,d,pl,a,byDay){
+  const pv=pl[d]||0, av=a[d]||0, note=noteOf(c,d), cn=coNote(d), ls=byDay[d]||[];
+  const cls = (d===ASOF?'today ':'') + ((av===0&&(note||cn))?'noday': (pv>0&&av===0)?'missing':'');
   const pe=store.edits.plan[c]&&d in store.edits.plan[c], ae=store.edits.act[c]&&d in store.edits.act[c], ne=(c+'|'+d) in store.notes;
-  // แถบ = ทำจริงเทียบแผนของวันนั้น (กรอบประ = แผน 100%)
-  const r = pv? Math.min(1,av/pv) : (av?1:0);
-  const bar = (pv||av)&&past? `<div class="pa" title="แผน ${fN(pv,1)} · ทำจริง ${fN(av,1)}">${pv?'<i class="p" style="width:100%"></i>':''}${av?`<i class="a ${pv&&av<pv?'lo':''}" style="width:calc(${(r*100).toFixed(1)}% - 4px)"></i>`:''}</div><span class="dd muted" style="font-weight:400">${pv?fN(av/pv*100,0)+'%':'นอกแผน'}</span>` : (pv&&!past? '<div class="pa" title="แผนล่วงหน้า"><i class="p" style="width:100%"></i></div>':'');
+  const r = pv? Math.min(1,av/pv) : 1;
+  // ทำจริง + แถบเทียบแผนของวันนั้นในช่องเดียว
+  const res = av? `<div class="res"><span class="ed ${ae?'edited':''}" data-edit="act" data-code="${c}" data-date="${d}"><b>${fN(av,1)}</b></span>${pv?`<div class="pa" title="${fN(av/pv*100,0)}% ของแผน"><i class="a ${av<pv?'lo':''}" style="width:${(r*100).toFixed(1)}%"></i></div><span class="pct ${av>=pv?'up':'down'}">${fN(av/pv*100,0)}%</span>`:'<span class="pct muted">นอกแผน</span>'}</div>`
+    : `<span class="ed ${ae?'edited':''}" data-edit="act" data-code="${c}" data-date="${d}">${pv?'<span class="zero">0</span>':'<span class="muted">·</span>'}</span>`;
   return `<tr id="r-${c}-${d}" class="${cls}"><td class="nowrap"><b style="font-weight:500">${TH_D[dow(d)]}</b> ${fD(d)}</td>
-    <td class="num"><span class="ed ${pe?'edited':''}" data-edit="plan" data-code="${c}" data-date="${d}">${pv?fN(pv,1):'<span class="muted">–</span>'}</span></td>
-    <td class="num"><span class="ed ${ae?'edited':''}" data-edit="act" data-code="${c}" data-date="${d}">${av?`<b>${fN(av,1)}</b>`:'<span class="muted">–</span>'}</span>${past&&(pv||av)?`<span class="dd ${av-pv>=0?'up':'down'}">${av-pv>=0?'+':''}${fN(av-pv,1)}</span>`:''}</td>
-    <td>${bar}</td>
-    <td>${ls.map(l=>`<span class="pill" title="${esc(l.company)} · หัวหน้าสาย ${esc(l.leader)} · ${esc(l.rigtype)}"><b>${esc(l.rig)}</b> ${esc(l.size)} · ${fN(l.len,1)}ม. <span class="shift ${esc(l.shift)}">${esc(l.shift)}</span> <b>${fN(l.qty)}</b>${l.src!=='seed'?' ✦':''}</span>`).join('')||'<span class="muted">–</span>'}</td>
-    <td><span class="ed ${ne?'edited':''}" data-edit="note" data-code="${c}" data-date="${d}">${note?esc(note):(canEdit()?'<span class="note-add">+ เพิ่มหมายเหตุ</span>':'')}</span>${cn?`<div class="muted" style="font-size:12px">ทั้งบริษัท: ${esc(cn)}</div>`:''}</td></tr>`;
+    <td class="num"><span class="ed ${pe?'edited':''}" data-edit="plan" data-code="${c}" data-date="${d}">${pv?fN(pv,1):'<span class="muted">·</span>'}</span></td>
+    <td class="num">${res}</td>
+    <td>${ls.filter(l=>l.qty>0).map(l=>`<span class="pill" title="${esc(l.company)} · หัวหน้าสาย ${esc(l.leader)} · ${esc(l.rigtype)}"><b>${esc(l.rig)}</b> ${esc(l.size)} · ${fN(l.len,1)}ม. <span class="shift ${esc(l.shift)}">${esc(l.shift)}</span> <b>${fN(l.qty)}</b>${l.src!=='seed'?' ✦':''}</span>`).join('')}</td>
+    <td><span class="ed ${ne?'edited':''}" data-edit="note" data-code="${c}" data-date="${d}">${note?esc(note):(canEdit()?`<span class="note-add">${pv>0&&av===0?'+ ระบุเหตุผลที่ไม่ได้ตอก':'+ หมายเหตุ'}</span>`:'')}</span>${cn?`<div class="muted" style="font-size:12px">ทั้งบริษัท: ${esc(cn)}</div>`:''}</td></tr>`;
 }
 function calTab(c){
   const p=P[c], a=actualMap(c), pl=planMap(c), ks=dayKeys(c).sort();
@@ -1087,7 +1139,7 @@ function openEditor(el){
   const kind=el.dataset.edit, c=el.dataset.code, d=el.dataset.date, f=el.dataset.field;
   let cur='';
   if(kind==='plan') cur=planMap(c)[d]||''; else if(kind==='act') cur=actualMap(c)[d]||''; else if(kind==='note') cur= c==='*'?coNote(d):noteOf(c,d); else if(kind==='N') cur=store.N; else cur=P[c][f]??'';
-  if(kind==='note'&&String(cur).startsWith('ไม่มีการตอก (x)')) cur='ไม่มีการตอก';
+  
   let html;
   if(kind==='field'&&f==='status') html=`<select>${Object.entries(ST_LABEL).map(([k,v])=>`<option value="${k}" ${k===cur?'selected':''}>${v}</option>`).join('')}</select>`;
   else if(kind==='field'&&(f==='start'||f==='end')) html=`<input type="date" value="${esc(cur)}">`;
@@ -1120,6 +1172,8 @@ document.addEventListener('click',e=>{
   const t=e.target.closest('[data-toggle]'); if(t){ const c=t.dataset.toggle; S.expanded.has(c)?S.expanded.delete(c):S.expanded.add(c); render(true); return; }
   const dt=e.target.closest('[data-dtab]'); if(dt){ const [c,k]=dt.dataset.dtab.split('|'); S.dtab[c]=k; render(true); return; }
   const cd=e.target.closest('[data-calday]'); if(cd){ const [c,d]=cd.dataset.calday.split('|'); S.dtab[c]='days'; if(d<wkStart(addD(ASOF,-20))) S.fullDays.add(c); render(true); const r=document.getElementById('r-'+c+'-'+d); if(r){ r.scrollIntoView({block:'center'}); r.classList.add('flash'); } return; }
+  const fp=e.target.closest('[data-fullplan]'); if(fp){ const c=fp.dataset.fullplan; S.fullPlan.has(c)?S.fullPlan.delete(c):S.fullPlan.add(c); render(true); return; }
+  const se=e.target.closest('[data-showempty]'); if(se){ const c=se.dataset.showempty; S.showEmpty.has(c)?S.showEmpty.delete(c):S.showEmpty.add(c); render(true); return; }
   const f=e.target.closest('[data-full]'); if(f){ const c=f.dataset.full; S.fullDays.has(c)?S.fullDays.delete(c):S.fullDays.add(c); render(true); return; }
   const u=e.target.closest('[data-undo]'); if(u){ const b=S.imports.find(x=>x.id===u.dataset.undo); LOGS=LOGS.filter(l=>l.batch!==b.id); b.undone=true; reindex(); toast(`ย้อนกลับ ${b.file} แล้ว`); render(true); }
 });
