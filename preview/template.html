@@ -6,30 +6,31 @@
 <title>Master Planning Preview</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   color-scheme: light;
-  --page:#eef3fb; --surface:#ffffff; --surface-2:#f5f8fd; --surface-3:#eaf1fc;
-  --ink:#0f1b33; --ink-2:#4d5b74; --muted:#8a96ab; --line:#e3e9f3; --line-2:#d3dcea;
-  --accent:#1f6fe5; --accent-ink:#ffffff; --accent-soft:#e7f0ff;
+  --page:#edf3fd; --surface:#ffffff; --surface-2:#f6f9fe; --surface-3:#ebf2fd;
+  --ink:#0b1a3a; --ink-2:#4a5878; --muted:#8793ab; --line:#e5ebf5; --line-2:#d3dcea;
+  --accent:#1d6bf3; --accent-2:#3f8cff; --accent-ink:#ffffff; --accent-soft:#e8f0ff;
+  --glow-1:#d6e6ff; --glow-2:#e4eeff;
   --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
   --plan:#898781;
   --good:#0ca30c; --good-ink:#0a7a0a; --good-soft:#e5f6e5;
   --warn:#fab219; --warn-ink:#9a6a00; --warn-soft:#fff4dc;
   --bad:#d03b3b; --bad-ink:#c02f2f; --bad-soft:#fde8e8;
   --i-blue:#e6efff; --i-green:#e3f6ec; --i-amber:#fff1d6; --i-red:#fde6e6;
-  --shadow:0 1px 2px rgba(15,27,51,.04),0 6px 24px rgba(15,27,51,.06);
-  --radius:16px;
+  --shadow:0 1px 2px rgba(16,42,94,.04),0 8px 28px rgba(16,42,94,.07);
+  --radius:18px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     color-scheme: dark;
     --page:#0c111c; --surface:#151c2b; --surface-2:#1a2335; --surface-3:#1f2a40;
     --ink:#eef2f8; --ink-2:#b4bfd2; --muted:#8a96ab; --line:#263047; --line-2:#33405c;
-    --accent:#4c8dff; --accent-ink:#06122a; --accent-soft:#1c2c4d;
+    --accent:#4c8dff; --accent-2:#6aa3ff; --accent-ink:#06122a; --accent-soft:#1c2c4d; --glow-1:#13213d; --glow-2:#111b31;
     --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
     --plan:#9a988f;
     --good-ink:#3fcf3f; --good-soft:#15301c; --warn-ink:#fab219; --warn-soft:#33290f; --bad-ink:#f07575; --bad-soft:#3a1a1d;
@@ -41,7 +42,7 @@
     color-scheme: dark;
     --page:#0c111c; --surface:#151c2b; --surface-2:#1a2335; --surface-3:#1f2a40;
     --ink:#eef2f8; --ink-2:#b4bfd2; --muted:#8a96ab; --line:#263047; --line-2:#33405c;
-    --accent:#4c8dff; --accent-ink:#06122a; --accent-soft:#1c2c4d;
+    --accent:#4c8dff; --accent-2:#6aa3ff; --accent-ink:#06122a; --accent-soft:#1c2c4d; --glow-1:#13213d; --glow-2:#111b31;
     --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
     --plan:#9a988f;
     --good-ink:#3fcf3f; --good-soft:#15301c; --warn-ink:#fab219; --warn-soft:#33290f; --bad-ink:#f07575; --bad-soft:#3a1a1d;
@@ -50,7 +51,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--page);color:var(--ink);font-family:"IBM Plex Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(1100px 520px at 105% -8%,var(--glow-1) 0%,transparent 62%),radial-gradient(900px 520px at -12% 108%,var(--glow-2) 0%,transparent 60%),var(--page);background-attachment:fixed;color:var(--ink);font-family:"Prompt",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;font-weight:400;line-height:1.55;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--accent);text-decoration:none}
 .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh;max-width:1560px;margin:0 auto}
@@ -246,6 +247,94 @@ tr.today td{box-shadow:inset 0 2px 0 var(--accent)}
 .banner b{color:var(--ink)}
 .empty{text-align:center;color:var(--muted);padding:26px}
 .scrim{display:none}
+/* ---------- design v2 ---------- */
+.hello h1{font-size:28px;font-weight:600;letter-spacing:-.01em}
+.hello h1 .wave{display:inline-block;margin-left:4px}
+.card h3{font-weight:600}
+.side{background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(8px)}
+.nav-label{font-size:11.5px;color:var(--muted);letter-spacing:.04em;padding:14px 12px 6px}
+.nav button.on{background:linear-gradient(90deg,var(--accent-soft),color-mix(in srgb,var(--accent-soft) 40%,transparent))}
+.logo-mark{background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 35%,transparent)}
+.btn{background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 25%,transparent)}
+.btn.ghost{box-shadow:none}
+.g12{grid-template-columns:repeat(12,minmax(0,1fr))}
+.span7{grid-column:span 7}.span5{grid-column:span 5}.span4{grid-column:span 4}.span8{grid-column:span 8}
+.flexcol{display:flex;flex-direction:column}
+.chart-box.grow{flex:1;min-height:260px}
+/* KPI ทุกใบมีสีพื้นอ่อนตามสีของมัน (แบบภาพอ้างอิง) */
+.kpi-card{border-color:transparent}
+.kpi-card.t-blue{background:linear-gradient(160deg,var(--i-blue),var(--surface) 75%)}
+.kpi-card.t-green{background:linear-gradient(160deg,var(--i-green),var(--surface) 75%)}
+.kpi-card.t-amber{background:linear-gradient(160deg,var(--i-amber),var(--surface) 75%)}
+.kpi-card.t-red{background:linear-gradient(160deg,var(--i-red),var(--surface) 75%)}
+.kpi .ic{width:52px;height:52px;box-shadow:inset 0 0 0 6px color-mix(in srgb,var(--surface) 55%,transparent)}
+.kpi .val{font-size:28px;font-weight:600}
+.kpi .lbl{font-size:13px}
+/* bar list (จังหวัด / ประเภทปั้นจั่น) */
+.blist{display:flex;flex-direction:column;gap:12px}
+.brow{display:grid;grid-template-columns:minmax(90px,140px) 1fr 70px 64px;gap:12px;align-items:center;font-size:13px}
+.brow .bl{color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bbar{height:8px;border-radius:99px;background:var(--surface-3);position:relative}
+.bbar>i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--s1)}
+.brow b{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.brow .d{text-align:right;font-size:12px}
+/* ตารางโครงการ */
+.pcell{display:flex;align-items:baseline;gap:10px;min-width:0}
+.pcell b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:340px}
+tr.prow.open td{background:var(--accent-soft)}
+.detail-in{padding:18px 20px 20px;border-left:3px solid var(--accent);background:linear-gradient(180deg,color-mix(in srgb,var(--accent-soft) 45%,var(--surface-2)),var(--surface-2) 140px)}
+.fields{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.dtabs{margin:4px 0 14px}
+.dbody>.card{box-shadow:none}
+/* รายวันแบบจัดกลุ่มสัปดาห์ */
+table.days td{padding:8px 10px}
+tr.wkrow td{background:var(--surface-3);font-size:12.5px;padding:7px 10px;border-bottom:0}
+tr.wkrow b{font-weight:600;margin-right:12px}
+tr.wkrow span{color:var(--ink-2)}
+.pa{position:relative;height:10px;border-radius:99px;background:var(--surface-3);min-width:90px}
+.pa i{position:absolute;left:0;top:0;bottom:0;border-radius:99px}
+.pa i.p{border:1.5px dashed var(--plan);background:transparent}
+.pa i.a{top:2px;bottom:2px;left:2px;background:var(--s1)}
+.pa i.a.lo{background:var(--s4)}
+.dd{display:block;font-size:11.5px;font-weight:600}
+.shift{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:5px;font-size:11px;font-weight:600;background:var(--i-blue);color:var(--s1);margin:0 2px}
+.shift.B{background:var(--i-amber);color:var(--warn-ink)}
+tr.flash td{animation:flash 1.6s ease}
+@keyframes flash{0%,40%{background:color-mix(in srgb,var(--accent) 22%,transparent)}}
+/* ปฏิทิน */
+.cals{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;max-width:100%}
+.cal{min-width:0}
+.cal h4{margin:0 0 8px;font-size:14px;font-weight:600}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cd{overflow:hidden}
+.donut-wrap.sm{grid-template-columns:128px 1fr;gap:14px}
+.donut-wrap.sm .donut-box{height:128px}
+.donut-wrap.sm .donut-c b{font-size:22px}
+.donut-wrap.sm .dl div{grid-template-columns:auto 1fr auto auto;gap:8px;font-size:12.5px}
+.dl span{white-space:nowrap}
+.flow-sum{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.stack{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--surface-3);gap:2px}
+.stack i{display:block;height:100%}
+.minis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.minis div{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:12.5px;color:var(--ink-2)}
+.minis b{display:block;font-size:18px;color:var(--ink);font-weight:600}
+.cal-g .hd{font-size:11px;color:var(--muted);text-align:center;padding-bottom:2px}
+.cd{all:unset;cursor:pointer;aspect-ratio:1/1;border-radius:9px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;justify-content:space-between;padding:4px 5px;font-size:10.5px;line-height:1.2;position:relative;box-sizing:border-box}
+.cd:hover{border-color:var(--accent)}
+.cd .n{color:var(--muted);font-size:10.5px}
+.cd .v{font-weight:600;font-size:11.5px;text-align:right;font-variant-numeric:tabular-nums}
+.cd.ok{background:var(--good-soft);border-color:transparent}.cd.ok .v{color:var(--good-ink)}
+.cd.part{background:var(--warn-soft);border-color:transparent}.cd.part .v{color:var(--warn-ink)}
+.cd.miss{background:var(--bad-soft);border-color:transparent}.cd.miss .v{color:var(--bad-ink)}
+.cd.nod{background:repeating-linear-gradient(135deg,var(--surface-3) 0 4px,var(--surface) 4px 8px)}
+.cd.fut{border-style:dashed}
+.cd.today{outline:2px solid var(--accent);outline-offset:1px}
+.cd.empty{visibility:hidden}
+.cd .ni{position:absolute;top:3px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--warn)}
+.cal-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2);margin-bottom:12px}
+.cal-legend span{display:inline-flex;align-items:center;gap:6px}
+.cal-legend i{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--line)}
+@media (max-width:1200px){.g12{grid-template-columns:1fr}.span7,.span5,.span4,.span8{grid-column:auto}}
 @media (max-width:1200px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g64,.g46,.g3{grid-template-columns:1fr}}
 @media (max-width:900px){
   .app{grid-template-columns:1fr}
@@ -420,7 +509,7 @@ const ROLES={
   drive_team:{label:'ฝ่ายตอก',name:'ฝ่ายตอก',pages:['drive','daily','plan'],home:'drive',edit:false},
   admin:{label:'ผู้ดูแลระบบ',name:'แอดมิน',pages:Object.keys(PAGES),home:'overview',edit:true}
 };
-const S={role:'manager',page:'overview',q:'',planTab:'ongoing',expanded:new Set(),fullDays:new Set(),day:null,chartRange:30,imports:[],pending:null};
+const S={role:'manager',page:'overview',q:'',planTab:'ongoing',expanded:new Set(),fullDays:new Set(),dtab:{},day:null,chartRange:30,imports:[],pending:null};
 try{ const r=localStorage.getItem('mp-role'); if(r&&ROLES[r]) S.role=r; }catch(e){}
 S.page=ROLES[S.role].home;
 const canEdit=()=>ROLES[S.role].edit;
@@ -429,7 +518,7 @@ const canEdit=()=>ROLES[S.role].edit;
 let CH=[];
 function mk(id,cfg){ const el=document.getElementById(id); if(!el) return; CH.push(new Chart(el,cfg)); }
 function chartBase(){
-  Chart.defaults.font.family='"IBM Plex Sans Thai",system-ui,sans-serif'; Chart.defaults.font.size=12;
+  Chart.defaults.font.family='"Prompt",system-ui,sans-serif'; Chart.defaults.font.size=12;
   Chart.defaults.color=css('--muted'); Chart.defaults.borderColor=css('--line');
   Object.assign(Chart.defaults.plugins.tooltip,{backgroundColor:css('--ink'),titleColor:css('--surface'),bodyColor:css('--surface'),footerColor:css('--surface'),padding:10,cornerRadius:8,boxPadding:4,usePointStyle:true});
   Chart.defaults.plugins.legend.display=false; Chart.defaults.maintainAspectRatio=false;
@@ -471,53 +560,78 @@ const VIEWS={}, AFTER={};
 VIEWS.overview=()=>{
   const prev=DATES[DATES.length-2];
   const dayQ=sum(LBYD[ASOF]||[],l=>l.qty), prevQ=sum(LBYD[prev]||[],l=>l.qty);
-  const ym=ASOF.slice(0,7), dom=+ASOF.slice(8);
-  const pm=addD(ym+'-01',-1).slice(0,7);
-  const mQ=sum(LOGS.filter(l=>l.d.startsWith(ym)),l=>l.qty), pmQ=sum(LOGS.filter(l=>l.d.startsWith(pm)&&+l.d.slice(8)<=dom),l=>l.qty);
-  const mV=sum(LOGS.filter(l=>l.d.startsWith(ym)),l=>l.qty*(P[l.p]?.vpp||0)), pmV=sum(LOGS.filter(l=>l.d.startsWith(pm)&&+l.d.slice(8)<=dom),l=>l.qty*(P[l.p]?.vpp||0));
-  const rw=runway();
-  const pct=(a,b)=>b? (a-b)/b*100 : 0;
-  const delta=(a,b,lbl)=>{ const v=pct(a,b); return `<div class="cmp"><span class="${v>=0?'up':'down'}">${v>=0?'↑':'↓'} ${fN(Math.abs(v),1)}%</span> ${lbl}</div>`; };
-  const ongoing=byStatus('ongoing').map(p=>p.code).sort((a,b)=>prog(b).remain-prog(a).remain);
-  const behind=Object.values(P).filter(p=>p.status==='ongoing'&&prog(p.code).hasPlan&&prog(p.code).ab<=-0.5).sort((a,b)=>prog(a.code).ab-prog(b.code).ab);
-  const soM=SALES.filter(s=>s.d.startsWith(ym)&&s.t==='P'); const soNew=new Set(soM.map(s=>s.p)).size;
+  const ym=ASOF.slice(0,7), dom=+ASOF.slice(8), pm=addD(ym+'-01',-1).slice(0,7);
+  const mL=LOGS.filter(l=>l.d.startsWith(ym)), pmL=LOGS.filter(l=>l.d.startsWith(pm)&&+l.d.slice(8)<=dom);
+  const mQ=sum(mL,l=>l.qty), pmQ=sum(pmL,l=>l.qty);
+  const mV=sum(mL,l=>l.qty*(P[l.p]?.vpp||0)), pmV=sum(pmL,l=>l.qty*(P[l.p]?.vpp||0));
+  const rw=runway(), b=rw.b, lvl=rw.lvl==='r'?'red':rw.lvl==='a'?'amber':'green';
+  const pct=(a,c)=>c?(a-c)/c*100:0;
+  const delta=(a,c,lbl)=>{const v=pct(a,c);return `<div class="cmp"><span class="${v>=0?'up':'down'}">${v>=0?'↑':'↓'} ${fN(Math.abs(v),1)}%</span> ${lbl}</div>`};
+  const kpi=(c,ic,lbl,val,unit,cmp)=>`<div class="card kpi-card t-${c}"><div class="kpi"><div class="ic ${c}">${svg(ic)}</div><div><div class="lbl">${lbl}</div><div class="val">${val}${unit?`<small>${unit}</small>`:''}</div>${cmp}</div></div></div>`;
+  const ongoing=byStatus('ongoing').map(p=>p.code).sort((a,c)=>prog(c).remain-prog(a).remain);
+  const behind=Object.values(P).filter(p=>p.status==='ongoing'&&prog(p.code).hasPlan&&prog(p.code).ab<=-0.5).sort((a,c)=>prog(a.code).ab-prog(c.code).ab);
+  const soNew=new Set(SALES.filter(s=>s.d.startsWith(ym)&&s.t==='P').map(s=>s.p)).size;
   const pend=new Set(SALES.filter(s=>s.appr==='รออนุมัติ').map(s=>s.p)).size;
-  const billDue=byStatus('ongoing').filter(p=>LOGS.some(l=>l.p===p.code&&l.d.startsWith(ym))).length;
+  const billDue=byStatus('ongoing').filter(p=>(LBYP[p.code]||[]).some(l=>l.d.startsWith(ym))).length;
   const flowP=Object.values(P).filter(p=>p.status==='ongoing'||p.status==='on_hand');
   const flowOrd=sum(flowP,p=>p.order), flowVal=sum(flowP,p=>p.value), flowDone=sum(flowP,p=>prog(p.code).done);
-  const acts=activity().slice(0,6);
-  return hello('', 'นี่คือภาพรวมงานตอกเสาเข็มและงานในมือของบริษัท',`<button class="btn ghost" id="lineBtn">${svg('line')}สรุปส่ง LINE</button>`)+`
+  // ผลงานตามจังหวัด / ประเภทปั้นจั่น 30 วัน เทียบ 30 วันก่อนหน้า
+  const f30=addD(ASOF,-29), f60=addD(ASOF,-59);
+  const prov={}, rt={};
+  for(const l of LOGS){ if(l.d<f60||l.d>ASOF) continue; const k=l.province||'ไม่ระบุ'; const o=prov[k]||(prov[k]={cur:0,prev:0}); if(l.d>=f30){o.cur+=l.qty; rt[l.rigtype||'ไม่ระบุ']=(rt[l.rigtype||'ไม่ระบุ']||0)+l.qty;} else o.prev+=l.qty; }
+  const provs=Object.entries(prov).filter(e=>e[1].cur>0).sort((a,c)=>c[1].cur-a[1].cur).slice(0,7), pmax=Math.max(1,...provs.map(e=>e[1].cur));
+  const rts=Object.entries(rt).sort((a,c)=>c[1]-a[1]), rtot=Math.max(1,sum(rts,e=>e[1]));
+  const acts=activity().slice(0,5);
+  return hello('', 'นี่คือภาพรวมงานตอกเสาเข็มและงานในมือของบริษัทวันนี้',`<button class="btn ghost" id="lineBtn">${svg('line')}สรุปส่ง LINE</button>`)+`
   <div class="grid g4 mb">
-    <div class="card kpi-card"><div class="kpi"><div class="ic blue">${svg('pile')}</div><div><div class="lbl">ตอกวันล่าสุด (${fDs(ASOF)})</div><div class="val">${fN(dayQ)}<small>ต้น</small></div>${delta(dayQ,prevQ,'เทียบ '+fDs(prev))}</div></div></div>
-    <div class="card kpi-card"><div class="kpi"><div class="ic green">${svg('day')}</div><div><div class="lbl">ตอกเดือนนี้</div><div class="val">${fN(mQ)}<small>ต้น</small></div>${delta(mQ,pmQ,'เทียบช่วงเดียวกันเดือนก่อน')}</div></div></div>
-    <div class="card kpi-card"><div class="kpi"><div class="ic amber">${svg('money')}</div><div><div class="lbl">มูลค่าผลงานเดือนนี้</div><div class="val">${fB(mV)}</div>${delta(mV,pmV,'เทียบช่วงเดียวกันเดือนก่อน')}</div></div></div>
-    <div class="card kpi-card ${rw.lvl==='r'?'red':rw.lvl==='a'?'amber':'green'}"><div class="kpi"><div class="ic ${rw.lvl==='r'?'red':rw.lvl==='a'?'amber':'green'}">${svg('alert')}</div><div><div class="lbl">งานในมือพอทำอีก (Runway)</div><div class="val">${isFinite(rw.w)?fN(rw.w,1):'∞'}<small>สัปดาห์</small></div><div class="cmp"><span class="${rw.lvl==='g'?'up':'down'}">${rw.lvl==='r'?'ต้องเร่งหายอดขาย':rw.lvl==='a'?'เฝ้าระวัง':'ปกติ'}</span> · เกณฑ์ ${rw.N} สัปดาห์</div></div></div></div>
+    ${kpi('blue','pile','ตอกวันล่าสุด · '+fDs(ASOF),fN(dayQ),'ต้น',delta(dayQ,prevQ,'เทียบ '+fDs(prev)))}
+    ${kpi('green','day','ตอกเดือนนี้',fN(mQ),'ต้น',delta(mQ,pmQ,'เทียบช่วงเดียวกันเดือนก่อน'))}
+    ${kpi('amber','money','มูลค่าผลงานเดือนนี้',fB(mV),'',delta(mV,pmV,'เทียบช่วงเดียวกันเดือนก่อน'))}
+    ${kpi(lvl,'alert','งานในมือพอทำอีก',isFinite(rw.w)?fN(rw.w,1):'∞','สัปดาห์',`<div class="cmp"><span class="${rw.lvl==='g'?'up':'down'}">${rw.lvl==='r'?'ต้องเร่งหายอดขาย':rw.lvl==='a'?'เฝ้าระวัง':'ปกติ'}</span> · เกณฑ์ ${rw.N} สัปดาห์</div>`)}
   </div>
-  <div class="grid g64 mb">
-    <div class="card"><div class="card-h"><div><h3>โครงการที่กำลังตอก</h3><div class="sub">${ongoing.length} โครงการ · ขีดดำ = ตำแหน่งตามแผน ณ วันนี้</div></div><button class="link" data-go="plan">ดูทั้งหมด</button></div>
-      <div class="tbl-wrap"><table><thead><tr><th>โครงการ</th><th class="num">ตอกแล้ว / สั่งซื้อ</th><th>เทียบแผน</th><th>ความคืบหน้า</th></tr></thead><tbody>
-      ${ongoing.slice(0,8).map(c=>{const g=prog(c);return `<tr class="prow" data-open="${c}"><td><span class="code">${c}</span><span class="cell-sub" style="max-width:200px">${esc(P[c].name)}</span></td><td class="num">${fN(g.done)} <span class="muted">/ ${fN(g.order)}</span></td><td>${dChip(c)}</td><td>${progBar(c)}</td></tr>`}).join('')}
+  <div class="grid g12 mb">
+    <div class="card span7"><div class="card-h"><div><h3>โครงการที่กำลังตอก</h3><div class="sub">${ongoing.length} โครงการ · ขีดดำบนแถบ = ตำแหน่งตามแผน ณ วันนี้</div></div><button class="link" data-go="plan">ดูทั้งหมด</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>โครงการ</th><th class="num">ตอกแล้ว / สั่งซื้อ</th><th>เทียบแผน</th><th style="min-width:170px">ความคืบหน้า</th></tr></thead><tbody>
+      ${ongoing.slice(0,7).map(c=>{const g=prog(c);return `<tr class="prow" data-open="${c}"><td><span class="code">${c}</span><span class="cell-sub" style="max-width:190px">${esc(P[c].name)}</span></td><td class="num"><b>${fN(g.done)}</b> <span class="muted">/ ${fN(g.order)}</span></td><td>${dChip(c)}</td><td>${progBar(c)}</td></tr>`}).join('')}
       </tbody></table></div></div>
-    <div class="card"><div class="card-h"><div><h3>ผลงานตอกรายวัน</h3><div class="sub">ต้น/วัน แยกตามเจ้าของปั้นจั่น</div></div><div class="seg" id="rangeSeg"><button data-r="30" class="${S.chartRange===30?'on':''}">30 วัน</button><button data-r="90" class="${S.chartRange===90?'on':''}">90 วัน</button></div></div>
+    <div class="card span5 flexcol"><div class="card-h"><div><h3>ผลงานตอกรายวัน</h3><div class="sub">ต้น/วัน แยกตามเจ้าของปั้นจั่น</div></div><div class="seg" id="rangeSeg"><button data-r="30" class="${S.chartRange===30?'on':''}">30 วัน</button><button data-r="90" class="${S.chartRange===90?'on':''}">90 วัน</button></div></div>
       <div class="legend"><span><i style="background:var(--s1)"></i>เอเซีย</span><span><i style="background:var(--s2)"></i>เอเซียร่วม</span><span><i style="background:var(--s3)"></i>ผู้รับเหมาร่วม</span></div>
-      <div class="chart-box"><canvas id="cDaily" aria-label="กราฟผลงานตอกรายวัน"></canvas></div></div>
+      <div class="chart-box grow"><canvas id="cDaily" aria-label="กราฟผลงานตอกรายวัน"></canvas></div></div>
   </div>
-  <div class="grid g46 mb">
-    <div class="card"><div class="card-h"><div><h3>สถานะโครงการทั้งหมด</h3><div class="sub">จาก Master Planning</div></div></div>
-      <div class="donut-wrap"><div class="donut-box"><canvas id="cStatus"></canvas><div class="donut-c"><div><b>${Object.keys(P).length}</b><span>โครงการ</span></div></div></div>
+  <div class="grid g3 mb">
+    <div class="card"><div class="card-h"><div><h3>งานในมือ</h3><div class="sub">คงเหลือ ${fN(b.piles)} ต้น · ${fB(b.baht)}</div></div><button class="link" data-go="sales">ดูเพิ่ม</button></div>
+      <div class="donut-wrap sm"><div class="donut-box"><canvas id="cBacklog"></canvas><div class="donut-c"><div><b>${isFinite(rw.w)?fN(rw.w,1):'∞'}</b><span>สัปดาห์</span></div></div></div>
+      <div class="dl">
+        <div><i style="background:var(--s1)"></i><span>กำลังตอก</span><b>${fN(b.ongoing)}</b><span class="p">ต้น</span></div>
+        <div><i style="background:var(--s2)"></i><span>รอเริ่ม</span><b>${fN(b.onhand)}</b><span class="p">ต้น</span></div>
+        <div><i style="background:var(--line-2)"></i><span>พักงาน*</span><b>${fN(b.holdPiles)}</b><span class="p">ต้น</span></div>
+        <div style="grid-template-columns:1fr"><span class="statusline ${rw.lvl}" style="justify-self:start;font-size:12.5px">${rw.lvl==='r'?'▼ ต้องเร่งหายอดขาย':rw.lvl==='a'?'● เฝ้าระวัง':'▲ งานพอ'} · ${fN(rw.rate)} ต้น/สัปดาห์</span></div>
+      </div></div>
+      <div class="sub" style="margin-top:8px">* พักงานไม่นับใน Runway</div></div>
+    <div class="card"><div class="card-h"><div><h3>สถานะโครงการ</h3><div class="sub">ทั้งหมด ${Object.keys(P).length} โครงการ</div></div></div>
+      <div class="donut-wrap sm"><div class="donut-box"><canvas id="cStatus"></canvas><div class="donut-c"><div><b>${byStatus('ongoing').length}</b><span>กำลังตอก</span></div></div></div>
       <div class="dl">${['ongoing','on_hand','hold','completed','cancelled'].map((s,i)=>{const n=byStatus(s).length;return `<div><i style="background:var(--s${i+1})"></i><span>${ST_LABEL[s]}</span><b>${fN(n)}</b><span class="p">${fN(n/Object.keys(P).length*100,1)}%</span></div>`}).join('')}</div></div></div>
-    <div class="card"><div class="card-h"><div><h3>โครงการที่ช้ากว่าแผน</h3><div class="sub">เรียงจากช้ามากที่สุด (ต้น)</div></div><button class="link" data-go="plan">ดูทั้งหมด</button></div>
-      ${behind.length?`<div class="tbl-wrap"><table><thead><tr><th>โครงการ</th><th>ลูกค้า</th><th class="num">แผนสะสม</th><th class="num">ทำได้</th><th class="num">ช้า (ต้น)</th></tr></thead><tbody>${behind.slice(0,6).map(p=>{const g=prog(p.code);return `<tr class="prow" data-open="${p.code}"><td class="code">${p.code}</td><td><span class="cell-sub" style="max-width:220px">${esc(p.customer)}</span></td><td class="num">${fN(g.planTo,1)}</td><td class="num">${fN(g.done,1)}</td><td class="num"><span class="dc r">${fN(g.ab,1)}</span></td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">ทุกโครงการเป็นไปตามแผน</div>'}</div>
+    <div class="card"><div class="card-h"><div><h3>ช้ากว่าแผน</h3><div class="sub">${behind.length} โครงการ · เรียงจากช้ามากที่สุด</div></div><button class="link" data-go="plan">ดูทั้งหมด</button></div>
+      ${behind.length?`<div class="list">${behind.slice(0,5).map(p=>{const g=prog(p.code);return `<div class="li prow" data-open="${p.code}" style="cursor:pointer"><div class="ic" style="background:var(--i-red);color:var(--bad-ink)">${svg('alert')}</div><div class="t"><b>${p.code} · ${esc(p.name)}</b><span>แผน ${fN(g.planTo)} · ทำได้ ${fN(g.done)}</span></div><span class="dc r">${fN(g.ab)}</span></div>`}).join('')}</div>`:'<div class="empty">ทุกโครงการเป็นไปตามแผน</div>'}</div>
   </div>
-  <div class="grid g64 mb">
-    <div class="card"><div class="card-h"><div><h3>เส้นทางงาน (หน่วย: ต้น)</h3><div class="sub">โครงการกำลังตอก + รอเริ่ม · SO เปิดใหม่เดือนนี้ ${fN(soNew)} โครงการ · รออนุมัติ ${fN(pend)} โครงการ</div></div><button class="link" data-go="sales">รายละเอียด</button></div>
+  <div class="grid g12 mb">
+    <div class="card span7"><div class="card-h"><div><h3>เส้นทางงาน</h3><div class="sub">หน่วยต้น · โครงการกำลังตอก + รอเริ่ม</div></div><button class="link" data-go="sales">รายละเอียด</button></div>
       <div class="flow">
         <div class="step"><div class="ic" style="background:var(--i-green);color:var(--good-ink)">${svg('doc')}</div><span>ยอดสั่งซื้อสุทธิ</span><b>${fN(flowOrd)}</b><small>${fB(flowVal)}</small></div><div class="arr">→</div>
         <div class="step"><div class="ic" style="background:var(--i-blue);color:var(--s1)">${svg('crane')}</div><span>ตอกแล้ว</span><b>${fN(flowDone)}</b><small>คงเหลือ ${fN(flowOrd-flowDone)} ต้น</small></div><div class="arr">→</div>
-        <div class="step"><div class="ic" style="background:var(--i-amber);color:var(--warn-ink)">${svg('check')}</div><span>ส่งมอบงานเดือนนี้</span><b>${fN(mQ)}</b><small>${billDue} โครงการ · ${fB(mV)}</small></div>
-      </div></div>
-    <div class="card"><div class="card-h"><div><h3>กิจกรรมล่าสุด</h3><div class="sub">หมายเหตุหน้างานและการนำเข้าข้อมูล</div></div><button class="link" data-go="daily">ดูทั้งหมด</button></div>
+        <div class="step"><div class="ic" style="background:var(--i-amber);color:var(--warn-ink)">${svg('check')}</div><span>ส่งมอบเดือนนี้</span><b>${fN(mQ)}</b><small>${billDue} โครงการ · ${fB(mV)}</small></div>
+      </div>
+      <div class="flow-sum"><div class="legend" style="justify-content:space-between"><span><i style="background:var(--s1)"></i>ตอกแล้ว ${fN(flowOrd?flowDone/flowOrd*100:0,0)}% ของยอดสั่งซื้อ</span><span><i style="background:var(--surface-3);border:1px solid var(--line-2)"></i>คงเหลือ ${fN(flowOrd-flowDone)} ต้น</span></div>
+        <div class="stack"><i style="width:${flowOrd?(flowDone/flowOrd*100).toFixed(1):0}%;background:var(--s1)"></i></div>
+        <div class="minis"><div><b>${fN(soNew)}</b>SO เปิดใหม่เดือนนี้</div><div><b>${fN(pend)}</b>SO รออนุมัติ</div><div><b>${byStatus('on_hand').length}</b>โครงการรอเริ่มตอก</div></div></div></div>
+    <div class="card span5"><div class="card-h"><div><h3>กิจกรรมล่าสุด</h3><div class="sub">หมายเหตุหน้างานและการนำเข้าข้อมูล</div></div><button class="link" data-go="daily">ดูทั้งหมด</button></div>
       <div class="list">${acts.map(a=>`<div class="li"><div class="ic" style="background:var(--${a.c})">${svg(a.i)}</div><div class="t"><b>${esc(a.t)}</b><span>${a.s}</span></div></div>`).join('')||'<div class="empty">ยังไม่มีกิจกรรม</div>'}</div></div>
+  </div>
+  <div class="grid g12">
+    <div class="card span7"><div class="card-h"><div><h3>ผลงานตามจังหวัด</h3><div class="sub">30 วันล่าสุด (ต้น) · เทียบ 30 วันก่อนหน้า</div></div></div>
+      <div class="blist">${provs.map(([k,o])=>{const d=o.prev?(o.cur-o.prev)/o.prev*100:null;return `<div class="brow"><span class="bl">${esc(k)}</span><div class="bbar"><i style="width:${(o.cur/pmax*100).toFixed(1)}%"></i></div><b>${fN(o.cur)}</b><span class="d ${d==null?'muted':d>=0?'up':'down'}">${d==null?'ใหม่':(d>=0?'↑ ':'↓ ')+fN(Math.abs(d),0)+'%'}</span></div>`}).join('')||'<div class="empty">ไม่มีข้อมูล</div>'}</div></div>
+    <div class="card span5"><div class="card-h"><div><h3>ประเภทปั้นจั่น</h3><div class="sub">สัดส่วนผลงาน 30 วันล่าสุด</div></div><button class="link" data-go="drive">คิวปั้นจั่น</button></div>
+      <div class="blist">${rts.map(([k,v])=>`<div class="brow"><span class="bl">${esc(k)}</span><div class="bbar"><i style="width:${(v/rtot*100).toFixed(1)}%;background:var(--s3)"></i></div><b>${fN(v)}</b><span class="d muted">${fN(v/rtot*100,0)}%</span></div>`).join('')}</div></div>
   </div>`;
 };
 function activity(){
@@ -534,8 +648,11 @@ AFTER.overview=()=>{
   mk('cDaily',{type:'bar',data:{labels:days.map(fDs),datasets:cats.map((c,i)=>({label:c,data:ser[i],backgroundColor:css('--s'+(i+1)),borderRadius:3,borderSkipped:'start',borderColor:css('--surface'),borderWidth:{top:1},maxBarThickness:14,stack:'a'}))},
     options:{interaction:{mode:'index',intersect:false},scales:{x:axisX({stacked:true}),y:axisY({stacked:true})},plugins:{tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fN(c.raw)} ต้น`,footer:it=>{const d=days[it[0].dataIndex];const t=sum(LBYD[d]||[],l=>l.qty);const n=coNote(d);return `รวม ${fN(t)} ต้น`+(n?`\nหมายเหตุ: ${n}`:'')+(dow(d)===0?'\n(วันอาทิตย์)':'');}}}}}});
   const counts=['ongoing','on_hand','hold','completed','cancelled'].map(s=>byStatus(s).length);
-  mk('cStatus',{type:'doughnut',data:{labels:['กำลังตอก','รอเริ่ม','พักงาน','เสร็จแล้ว','ยกเลิก'],datasets:[{data:counts,backgroundColor:[1,2,3,4,5].map(i=>css('--s'+i)),borderColor:css('--surface'),borderWidth:2,hoverOffset:4}]},options:{cutout:'72%',plugins:{tooltip:{callbacks:{label:c=>` ${c.label}: ${fN(c.raw)} โครงการ`}}}}});
-  document.querySelectorAll('#rangeSeg button').forEach(b=>b.onclick=()=>{S.chartRange=+b.dataset.r;render(true)});
+  const ring={cutout:'74%',plugins:{tooltip:{callbacks:{}}}};
+  mk('cStatus',{type:'doughnut',data:{labels:['กำลังตอก','รอเริ่ม','พักงาน','เสร็จแล้ว','ยกเลิก'],datasets:[{data:counts,backgroundColor:[1,2,3,4,5].map(i=>css('--s'+i)),borderColor:css('--surface'),borderWidth:2,hoverOffset:4}]},options:{...ring,plugins:{tooltip:{callbacks:{label:c=>` ${c.label}: ${fN(c.raw)} โครงการ`}}}}});
+  const b=runway().b;
+  mk('cBacklog',{type:'doughnut',data:{labels:['กำลังตอก','รอเริ่ม','พักงาน'],datasets:[{data:[b.ongoing,b.onhand,b.holdPiles],backgroundColor:[css('--s1'),css('--s2'),css('--line-2')],borderColor:css('--surface'),borderWidth:2,hoverOffset:4}]},options:{...ring,plugins:{tooltip:{callbacks:{label:c=>` ${c.label}: ${fN(c.raw)} ต้น`}}}}});
+  document.querySelectorAll('#rangeSeg button').forEach(x=>x.onclick=()=>{S.chartRange=+x.dataset.r;render(true)});
   document.getElementById('lineBtn').onclick=()=>showText('สรุปส่ง LINE',fD(ASOF),lineDaily(ASOF));
 };
 
@@ -554,73 +671,114 @@ VIEWS.plan=()=>{
       <input class="input" id="pq" placeholder="ค้นหาในตาราง…" value="${esc(S.q)}" style="width:220px">
       <button class="btn ghost sm" id="expAll">${svg('dl')}Export Master Planning</button>${canEdit()?`<button class="btn sm" id="coNoteBtn">${svg('note')}หมายเหตุทั้งบริษัท</button>`:''}</div>
     ${q?`<div class="sub" style="margin-bottom:8px">ผลการค้นหา "${esc(S.q)}" ${rows.length} โครงการ <button class="link" id="clearQ">ล้าง</button></div>`:''}
-    <div class="tbl-wrap"><table><thead><tr><th></th><th>รหัส</th><th>โครงการ / ลูกค้า</th><th>สถานะ</th><th>PM</th><th class="num">สั่งซื้อ</th><th class="num">ตอกแล้ว</th><th>ความคืบหน้า</th><th>เทียบแผน</th><th class="num">อัตรา/วัน</th><th>คาดเสร็จ</th><th>กำหนดเสร็จ</th></tr></thead>
-    <tbody>${shown.map(p=>planRow(p.code)).join('')||'<tr><td colspan="12" class="empty">ไม่พบโครงการ</td></tr>'}</tbody></table></div>
+    <div class="tbl-wrap"><table><thead><tr><th style="width:24px"></th><th>โครงการ / ลูกค้า</th><th>สถานะ</th><th class="num">ตอกแล้ว / สั่งซื้อ</th><th style="min-width:170px">ความคืบหน้า</th><th>เทียบแผน</th><th class="num">อัตรา/วัน</th><th>คาดเสร็จ</th></tr></thead>
+    <tbody>${shown.map(p=>planRow(p.code)).join('')||'<tr><td colspan="8" class="empty">ไม่พบโครงการ</td></tr>'}</tbody></table></div>
     ${rows.length>shown.length?`<div class="sub" style="margin-top:8px">แสดง ${shown.length} จาก ${rows.length} โครงการ — พิมพ์ค้นหาเพื่อกรอง</div>`:''}
   </div>`;
 };
 function planRow(c){
   const p=P[c], g=prog(c), open=S.expanded.has(c);
   const late = g.eta && p.end && g.eta>p.end;
-  return `<tr class="prow ${open?'open':''}" data-toggle="${c}"><td><span class="caret">▸</span></td><td class="code">${c}</td><td><b style="font-weight:500">${esc(p.name)}</b><span class="cell-sub">${esc(p.customer)}</span></td><td>${stBadge(p.status)}</td><td class="nowrap">${esc(p.pm)||'–'}</td><td class="num">${fN(g.order)}</td><td class="num">${fN(g.done,1)}</td><td>${progBar(c)}</td><td>${dChip(c)}</td><td class="num">${g.rate?fN(g.rate,1):'–'}</td><td class="nowrap ${late?'wk':''}">${g.eta?fD(g.eta):'–'}</td><td class="nowrap">${fD(p.end)}</td></tr>
-  ${open?`<tr class="detail"><td colspan="12">${projDetail(c)}</td></tr>`:''}`;
+  return `<tr class="prow ${open?'open':''}" data-toggle="${c}"><td><span class="caret">▸</span></td>
+    <td><div class="pcell"><span class="code">${c}</span><b>${esc(p.name)}</b></div><span class="cell-sub" style="max-width:420px">${esc(p.customer)}${p.pm?' · PM '+esc(p.pm):''}</span></td>
+    <td>${stBadge(p.status)}</td>
+    <td class="num"><b>${fN(g.done,1)}</b> <span class="muted">/ ${fN(g.order)}</span></td>
+    <td>${progBar(c)}</td><td>${dChip(c)}</td>
+    <td class="num">${g.rate?fN(g.rate,1):'–'}</td>
+    <td class="nowrap"><span class="${late?'wk':''}">${g.eta?fD(g.eta):'–'}</span><span class="cell-sub">กำหนด ${fD(p.end)}</span></td></tr>
+  ${open?`<tr class="detail"><td colspan="8">${projDetail(c)}</td></tr>`:''}`;
 }
 function fieldEd(c,f,label,val,disp){ return `<div><label>${label}</label><span class="ed ${store.proj[c]&&f in store.proj[c]?'edited':''}" data-edit="field" data-code="${c}" data-field="${f}">${disp??(esc(val)||'–')}</span></div>`; }
 function projDetail(c){
-  const p=P[c], g=prog(c), a=actualMap(c), pl=planMap(c);
-  const all=Object.keys(Object.assign({},a,pl,P[c].notes||{})).concat(Object.keys(store.notes).filter(k=>k.startsWith(c+'|')).map(k=>k.split('|')[1]));
-  let from=all.length?all.reduce((x,y)=>x<y?x:y):addD(ASOF,-14), to=all.length?all.reduce((x,y)=>x>y?x:y):addD(ASOF,14);
-  if(to<addD(ASOF,7)&&p.status!=='completed') to=addD(ASOF,7);
-  const full=S.fullDays.has(c);
-  let winFrom=full?from:[addD(ASOF,-20),from].sort()[1]; if(winFrom>to) winFrom=from;
-  const days=range(winFrom,to).reverse();
-  const logs=LBYP[c]||[];
-  const byDay={}; for(const l of logs) (byDay[l.d]||(byDay[l.d]=[])).push(l);
-  // size breakdown
-  const sz={}; for(const l of logs){ const k=l.size+'|'+l.len; const o=sz[k]||(sz[k]={size:l.size,len:l.len,order:0,done:0,std:l.std}); o.order=Math.max(o.order,l.order); o.done+=l.qty; }
-  const szRows=Object.values(sz).sort((x,y)=>x.size.localeCompare(y.size)||x.len-y.len);
+  const p=P[c], g=prog(c), tab=S.dtab[c]||'days';
+  const tabs=[['days','รายวัน'],['cal','ปฏิทิน'],['curve','S-curve & ขนาดเสา']].concat(SO[c]?[['so','ใบ P − R − C']]:[]);
   return `<div class="detail-in">
     <div class="fields">
       ${fieldEd(c,'customer','ลูกค้า',p.customer)}${fieldEd(c,'pm','PM',p.pm)}${fieldEd(c,'sales','Sales',p.sales)}
       ${fieldEd(c,'status','สถานะ',p.status,stBadge(p.status))}${fieldEd(c,'start','กำหนดเริ่ม',p.start,fD(p.start))}${fieldEd(c,'end','กำหนดเสร็จ',p.end,fD(p.end))}
       ${fieldEd(c,'order',`ยอดสั่งซื้อ (ต้น) · จาก ${p.orderSrc==='SO'?'ใบ P−R−C':p.orderSrc==='MP'?'Master Planning':'คิว-วัน'}`,p.order,fN(p.order))}${fieldEd(c,'value','มูลค่าโครงการ',p.value,fB2(p.value))}${fieldEd(c,'vpp','มูลค่าเฉลี่ย/ต้น',p.vpp,fB2(p.vpp))}${fieldEd(c,'billing','รอบส่งมอบ / วางบิล',p.billing)}
     </div>
-    <div class="mini">
+    <div class="mini" style="margin-top:14px">
       <div><label>ตอกแล้ว</label><b>${fN(g.done,1)}</b></div><div><label>คงเหลือ</label><b>${fN(g.remain,1)}</b></div>
       <div><label>แผนสะสมถึง ${fDs(ASOF)}</label><b>${fN(g.planTo,1)}</b></div><div><label>เทียบแผน</label><b>${dChip(c)}</b></div>
       <div><label>อัตรา 14 วัน</label><b>${g.rate?fN(g.rate,1):'–'}</b> <span class="muted">ต้น/วัน</span></div><div><label>คาดว่าเสร็จ</label><b>${g.eta?fD(g.eta):'–'}</b></div>
     </div>
     ${p.fromPile&&SO[c]?.hasP&&Math.abs(SO[c].qty-p.order)>=0.5?`<div class="banner" style="background:var(--warn-soft)">${svg('alert','width="18" height="18"')}<div>ใบ P−R−C ในไฟล์ SO รวมได้ <b>${fN(SO[c].qty)} ต้น</b> ไม่ตรงกับ Master Planning <b>${fN(p.order)} ต้น</b> — ระบบใช้ Master Planning เป็นหลัก ควรตรวจใบเปลี่ยนแปลงในระบบขาย</div></div>`:''}
-    ${SO[c]?soTable(c):''}
-    <div class="grid g2" style="margin-bottom:16px">
+    <div class="seg dtabs">${tabs.map(([k,l])=>`<button data-dtab="${c}|${k}" class="${tab===k?'on':''}">${l}</button>`).join('')}</div>
+    <div class="dbody">${tab==='cal'?calTab(c):tab==='curve'?curveTab(c):tab==='so'&&SO[c]?soTable(c):daysTab(c)}</div>
+  </div>`;
+}
+function dayKeys(c){ const p=P[c]; return Object.keys(Object.assign({},actualMap(c),planMap(c),p.notes||{})).concat(Object.keys(store.notes).filter(k=>k.startsWith(c+'|')&&store.notes[k]).map(k=>k.split('|')[1])); }
+const wkStart=d=>addD(d,-((dow(d)+6)%7));   // สัปดาห์เริ่มวันจันทร์
+function daysTab(c){
+  const p=P[c], a=actualMap(c), pl=planMap(c), ks=dayKeys(c);
+  let from=ks.length?ks.reduce((x,y)=>x<y?x:y):addD(ASOF,-14), to=ks.length?ks.reduce((x,y)=>x>y?x:y):addD(ASOF,7);
+  if(to<addD(ASOF,7)&&p.status!=='completed') to=addD(ASOF,7);
+  const full=S.fullDays.has(c);
+  let winFrom=full?from:[wkStart(addD(ASOF,-20)),from].sort()[1]; if(winFrom>to) winFrom=from;
+  const byDay={}; for(const l of (LBYP[c]||[])) (byDay[l.d]||(byDay[l.d]=[])).push(l);
+  const days=range(winFrom,to).reverse();
+  const groups=[]; for(const d of days){ const w=wkStart(d); let gp=groups[groups.length-1]; if(!gp||gp.w!==w){gp={w,days:[]};groups.push(gp);} gp.days.push(d); }
+  const mx=Math.max(1,...days.map(d=>Math.max(pl[d]||0,a[d]||0)));
+  return `<div class="card-h"><div class="sub">แถวเหลือง = มีหมายเหตุวันไม่มีการตอก · แถวแดง = มีแผนแต่ไม่มีผลงานและยังไม่มีเหตุผล${canEdit()?' · คลิกตัวเลข/หมายเหตุเพื่อแก้':''}</div><button class="btn ghost sm" data-full="${c}">${full?'แสดง 3 สัปดาห์ล่าสุด':'แสดงทั้งหมด'}</button></div>
+  <div class="tbl-wrap"><table class="days"><thead><tr><th>วันที่</th><th class="num">แผน</th><th class="num">ทำจริง</th><th style="width:130px">เทียบแผน</th><th>รายละเอียดการตอก (ปั้นจั่น · ขนาด · ยาว · กะ · ต้น)</th><th style="min-width:200px">หมายเหตุ</th></tr></thead><tbody>
+  ${groups.map(gp=>{ const wp=sum(gp.days,d=>pl[d]||0), wa=sum(gp.days,d=>d<=ASOF?(a[d]||0):0), past=gp.w<=ASOF;
+    return `<tr class="wkrow"><td colspan="6"><b>สัปดาห์ ${fDs(gp.w)} – ${fD(addD(gp.w,6))}</b><span>แผน ${fN(wp,1)} · ทำจริง ${past?fN(wa,1):'–'}${wp&&past?` · <b style="margin:0;color:var(--${wa>=wp?'good':'bad'}-ink)">${fN(wa/wp*100,0)}%</b>`:''}</span></td></tr>`
+      + gp.days.map(d=>dayRow(c,d,pl,a,byDay,mx)).join(''); }).join('')}
+  </tbody></table></div>`;
+}
+function dayRow(c,d,pl,a,byDay,mx){
+  const pv=pl[d]||0, av=a[d]||0, note=noteOf(c,d), cn=coNote(d), ls=byDay[d]||[], past=d<=ASOF;
+  const cls = d===ASOF?'today': !past?'future': (av===0&&(note||cn))?'noday': (pv>0&&av===0)?'missing':'';
+  const pe=store.edits.plan[c]&&d in store.edits.plan[c], ae=store.edits.act[c]&&d in store.edits.act[c], ne=(c+'|'+d) in store.notes;
+  // แถบ = ทำจริงเทียบแผนของวันนั้น (กรอบประ = แผน 100%)
+  const r = pv? Math.min(1,av/pv) : (av?1:0);
+  const bar = (pv||av)&&past? `<div class="pa" title="แผน ${fN(pv,1)} · ทำจริง ${fN(av,1)}">${pv?'<i class="p" style="width:100%"></i>':''}${av?`<i class="a ${pv&&av<pv?'lo':''}" style="width:calc(${(r*100).toFixed(1)}% - 4px)"></i>`:''}</div><span class="dd muted" style="font-weight:400">${pv?fN(av/pv*100,0)+'%':'นอกแผน'}</span>` : (pv&&!past? '<div class="pa" title="แผนล่วงหน้า"><i class="p" style="width:100%"></i></div>':'');
+  return `<tr id="r-${c}-${d}" class="${cls}"><td class="nowrap"><b style="font-weight:500">${TH_D[dow(d)]}</b> ${fD(d)}</td>
+    <td class="num"><span class="ed ${pe?'edited':''}" data-edit="plan" data-code="${c}" data-date="${d}">${pv?fN(pv,1):'<span class="muted">–</span>'}</span></td>
+    <td class="num"><span class="ed ${ae?'edited':''}" data-edit="act" data-code="${c}" data-date="${d}">${av?`<b>${fN(av,1)}</b>`:'<span class="muted">–</span>'}</span>${past&&(pv||av)?`<span class="dd ${av-pv>=0?'up':'down'}">${av-pv>=0?'+':''}${fN(av-pv,1)}</span>`:''}</td>
+    <td>${bar}</td>
+    <td>${ls.map(l=>`<span class="pill" title="${esc(l.company)} · หัวหน้าสาย ${esc(l.leader)} · ${esc(l.rigtype)}"><b>${esc(l.rig)}</b> ${esc(l.size)} · ${fN(l.len,1)}ม. <span class="shift ${esc(l.shift)}">${esc(l.shift)}</span> <b>${fN(l.qty)}</b>${l.src!=='seed'?' ✦':''}</span>`).join('')||'<span class="muted">–</span>'}</td>
+    <td><span class="ed ${ne?'edited':''}" data-edit="note" data-code="${c}" data-date="${d}">${note?esc(note):(canEdit()?'<span class="note-add">+ เพิ่มหมายเหตุ</span>':'')}</span>${cn?`<div class="muted" style="font-size:12px">ทั้งบริษัท: ${esc(cn)}</div>`:''}</td></tr>`;
+}
+function calTab(c){
+  const p=P[c], a=actualMap(c), pl=planMap(c), ks=dayKeys(c).sort();
+  const first=ks[0]||ASOF, last=ks[ks.length-1]||ASOF;
+  // แสดงสูงสุด 4 เดือน: จากเดือนแรกที่มีข้อมูล (ไม่เกิน 3 เดือนก่อนวันล่าสุด) ถึงเดือนสุดท้ายที่มีแผน
+  let m0=[first.slice(0,7), addD(ASOF.slice(0,7)+'-01',-80).slice(0,7)].sort()[1];
+  const m1=[last.slice(0,7), ASOF.slice(0,7)].sort()[1];
+  const months=[]; for(let m=m0; m<=m1 && months.length<4; m=addD(m+'-28',5).slice(0,7)) months.push(m);
+  const cell=d=>{ const pv=pl[d]||0, av=a[d]||0, note=noteOf(c,d)||coNote(d), past=d<=ASOF;
+    let cls = !past? (pv?'fut':'') : av>0? (pv&&av<pv?'part':'ok') : note?'nod' : pv>0?'miss':'';
+    if(d===ASOF) cls+=' today';
+    const v = past? (av? fN(av): pv? '0':'') : (pv? fN(pv):'');
+    return `<button class="cd ${cls}" data-calday="${c}|${d}" title="${fD(d)} · แผน ${fN(pv,1)} · ทำจริง ${fN(av,1)}${note?' · '+esc(note):''}"><span class="n">${+d.slice(8)}</span>${note?'<i class="ni"></i>':''}<span class="v" ${!past?'style="color:var(--muted)"':''}>${v}</span></button>`; };
+  return `<div class="cal-legend"><span><i style="background:var(--good-soft)"></i>ทำได้ตามแผน</span><span><i style="background:var(--warn-soft)"></i>ทำได้บางส่วน</span><span><i style="background:var(--bad-soft)"></i>มีแผนแต่ไม่ได้ตอก</span><span><i style="background:repeating-linear-gradient(135deg,var(--surface-3) 0 3px,var(--surface) 3px 6px)"></i>หยุด (มีหมายเหตุ)</span><span><i style="border-style:dashed"></i>แผนล่วงหน้า</span><span><i style="background:var(--warn);border-radius:50%;width:8px;height:8px"></i>มีหมายเหตุ</span></div>
+  <div class="cals">${months.map(m=>{ const d1=m+'-01'; const lead=(dow(d1)+6)%7; const days=range(d1,addD(addD(m+'-28',5).slice(0,7)+'-01',-1));
+    const mp=sum(days,d=>pl[d]||0), ma=sum(days,d=>d<=ASOF?(a[d]||0):0);
+    return `<div class="cal"><h4>${fM(m)} <span class="muted" style="font-weight:400;font-size:12px">· แผน ${fN(mp)} · ทำจริง ${fN(ma)}</span></h4><div class="cal-g">${['จ','อ','พ','พฤ','ศ','ส','อา'].map(h=>`<div class="hd">${h}</div>`).join('')}${'<span class="cd empty"></span>'.repeat(lead)}${days.map(cell).join('')}</div></div>`; }).join('')}</div>
+  <div class="sub" style="margin-top:10px">คลิกวันที่เพื่อไปดู/แก้รายละเอียดในแท็บรายวัน</div>`;
+}
+function curveTab(c){
+  const logs=LBYP[c]||[];
+  const sz={}; for(const l of logs){ const k=l.size+'|'+l.len; const o=sz[k]||(sz[k]={size:l.size,len:l.len,order:0,done:0,std:l.std}); o.order=Math.max(o.order,l.order); o.done+=l.qty; }
+  const szRows=Object.values(sz).sort((x,y)=>x.size.localeCompare(y.size)||x.len-y.len);
+  return `<div class="grid g2">
       <div class="card" style="box-shadow:none"><div class="card-h"><div><h3>S-curve แผนเทียบจริง</h3><div class="sub">ยอดสะสม (ต้น)</div></div></div>
         <div class="legend"><span><i class="dash"></i>แผนสะสม</span><span><i class="line" style="background:var(--s1)"></i>ทำจริงสะสม</span></div>
-        <div class="chart-box sm"><canvas id="sc-${c}"></canvas></div></div>
+        <div class="chart-box"><canvas id="sc-${c}"></canvas></div></div>
       <div class="card" style="box-shadow:none"><div class="card-h"><div><h3>ยอดตามขนาด / ความยาว</h3><div class="sub">จากไฟล์คิว-วัน · ขาดตอก = สั่งซื้อ − ตอกแล้ว</div></div></div>
-        ${szRows.length?`<div class="tbl-wrap"><table><thead><tr><th>ขนาด</th><th class="num">ยาว (ม.)</th><th class="num">สั่งซื้อ</th><th class="num">ตอกแล้ว</th><th class="num">ขาดตอก</th></tr></thead><tbody>${szRows.map(r=>`<tr><td><b>${esc(r.size)}</b> <span class="muted">${esc(r.std)}</span></td><td class="num">${fN(r.len,1)}</td><td class="num">${fN(r.order)}</td><td class="num">${fN(r.done)}</td><td class="num ${r.order-r.done>0?'':'muted'}">${fN(Math.max(0,r.order-r.done))}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">ยังไม่มีข้อมูลการตอกในไฟล์คิว-วัน</div>'}</div>
-    </div>
-    <div class="card-h"><div><h3>รายวัน</h3><div class="sub">${fD(days[days.length-1])} – ${fD(days[0])} · แถวเหลือง = มีหมายเหตุไม่มีการตอก · แถวแดง = มีแผนแต่ไม่มีผลงานและไม่มีหมายเหตุ</div></div>
-      <button class="btn ghost sm" data-full="${c}">${full?'แสดง 3 สัปดาห์ล่าสุด':'แสดงทั้งหมด'}</button></div>
-    <div class="tbl-wrap"><table><thead><tr><th>วันที่</th><th class="num">แผน</th><th class="num">ทำจริง</th><th class="num">ต่าง</th><th>รายละเอียดการตอก (ปั้นจั่น · ขนาด · ยาว · กะ · ต้น)</th><th style="min-width:200px">หมายเหตุ</th></tr></thead><tbody>
-    ${days.map(d=>{ const pv=pl[d]||0, av=a[d]||0, note=noteOf(c,d), cn=coNote(d), ls=byDay[d]||[]; const past=d<=ASOF;
-      const cls = d===ASOF?'today': !past?'future': (av===0&&(note||cn))?'noday': (pv>0&&av===0)?'missing':'';
-      const pe=store.edits.plan[c]&&d in store.edits.plan[c], ae=store.edits.act[c]&&d in store.edits.act[c], ne=(c+'|'+d) in store.notes;
-      return `<tr class="${cls}"><td class="nowrap"><b style="font-weight:500">${fD(d)}</b> <span class="muted">${TH_D[dow(d)]}</span></td>
-        <td class="num"><span class="ed ${pe?'edited':''}" data-edit="plan" data-code="${c}" data-date="${d}">${pv?fN(pv,1):'<span class="muted">–</span>'}</span></td>
-        <td class="num"><span class="ed ${ae?'edited':''}" data-edit="act" data-code="${c}" data-date="${d}">${av?`<b>${fN(av,1)}</b>`:'<span class="muted">–</span>'}</span></td>
-        <td class="num">${past&&(pv||av)?`<span class="${av-pv>=0?'up':'down'}">${av-pv>=0?'+':''}${fN(av-pv,1)}</span>`:''}</td>
-        <td>${ls.map(l=>`<span class="pill" title="${esc(l.company)} · หัวหน้าสาย ${esc(l.leader)} · ${esc(l.rigtype)}"><b>${esc(l.rig)}</b> · ${esc(l.size)} · ${fN(l.len,1)}ม. · กะ ${esc(l.shift)} · <b>${fN(l.qty)}</b>${l.src!=='seed'?' ✦':''}</span>`).join('')||'<span class="muted">–</span>'}</td>
-        <td><span class="ed ${ne?'edited':''}" data-edit="note" data-code="${c}" data-date="${d}">${note?esc(note):(canEdit()?'<span class="note-add">+ เพิ่มหมายเหตุ</span>':'')}</span>${cn?`<div class="muted" style="font-size:12px">ทั้งบริษัท: ${esc(cn)}</div>`:''}</td></tr>`; }).join('')}
-    </tbody></table></div></div>`;
+        ${szRows.length?`<div class="tbl-wrap" style="max-height:300px;overflow:auto"><table><thead><tr><th>ขนาด</th><th class="num">ยาว (ม.)</th><th class="num">สั่งซื้อ</th><th class="num">ตอกแล้ว</th><th class="num">ขาดตอก</th></tr></thead><tbody>${szRows.map(r=>`<tr><td><b>${esc(r.size)}</b> <span class="muted">${esc(r.std)}</span></td><td class="num">${fN(r.len,1)}</td><td class="num">${fN(r.order)}</td><td class="num">${fN(r.done)}</td><td class="num ${r.order-r.done>0?'':'muted'}">${fN(Math.max(0,r.order-r.done))}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">ยังไม่มีข้อมูลการตอกในไฟล์คิว-วัน</div>'}</div>
+    </div>`;
 }
 function soTable(c){
-  const o=SO[c], money=true;
+  const o=SO[c];
   const docs=o.docs.slice().sort((a,b)=>a.d.localeCompare(b.d)||a.t.localeCompare(b.t));
   const T={P:'<span class="dc g">P เปิดขาย</span>',R:'<span class="dc r">R ลด/เปลี่ยน</span>',C:'<span class="dc r">C ลด/เปลี่ยน</span>'};
-  return `<details class="card" style="box-shadow:none;margin-bottom:16px"><summary style="cursor:pointer;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span><b>ใบ P − R − C</b> <span class="muted">${docs.length} รายการ · คลิกเพื่อดู</span></span><span>จำนวนสุทธิ <b>${fN(o.qty)} ต้น</b>${money?` · มูลค่าสุทธิ <b>${fB2(o.amt)}</b>`:''}</span></summary>
-  <div class="tbl-wrap" style="margin-top:10px"><table><thead><tr><th>วันที่</th><th>ประเภท</th><th>รายการ</th><th class="num">จำนวน</th>${money?'<th class="num">มูลค่า</th>':''}<th>สถานะ</th></tr></thead><tbody>
-  ${docs.map(s=>`<tr><td class="nowrap">${fD(s.d)}</td><td>${T[s.t]||s.t}</td><td>${isPileLine(s)?'':'<span class="muted">(บริการ ไม่นับต้น) </span>'}${esc(s.gp)}</td><td class="num">${fN(s.qty)}</td>${money?`<td class="num">${fB2(s.amt)}</td>`:''}<td class="muted">${esc(s.appr)}</td></tr>`).join('')}
-  </tbody></table></div></details>`;
+  return `<div class="card"><div class="card-h"><div><h3>ใบ P − R − C</h3><div class="sub">${docs.length} รายการ · ใช้ตรวจเทียบกับ Master Planning</div></div><div>จำนวนสุทธิ <b>${fN(o.qty)} ต้น</b> · มูลค่าสุทธิ <b>${fB2(o.amt)}</b></div></div>
+  <div class="tbl-wrap" style="max-height:360px;overflow:auto"><table><thead><tr><th>วันที่</th><th>ประเภท</th><th>รายการ</th><th class="num">จำนวน</th><th class="num">มูลค่า</th><th>สถานะ</th></tr></thead><tbody>
+  ${docs.map(s=>`<tr><td class="nowrap">${fD(s.d)}</td><td>${T[s.t]||s.t}</td><td>${isPileLine(s)?'':'<span class="muted">(บริการ ไม่นับต้น) </span>'}${esc(s.gp)}</td><td class="num">${fN(s.qty)}</td><td class="num">${fB2(s.amt)}</td><td class="muted">${esc(s.appr)}</td></tr>`).join('')}
+  </tbody></table></div></div>`;
 }
 function drawSCurves(){
   for(const c of S.expanded){ const el=document.getElementById('sc-'+c); if(!el) continue;
@@ -960,6 +1118,8 @@ document.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]'); if(g){ go(g.dataset.go); return; }
   const o=e.target.closest('[data-open]'); if(o){ e.preventDefault(); const c=o.dataset.open; S.expanded.add(c); S.q=c; S.page='plan'; render(); return; }
   const t=e.target.closest('[data-toggle]'); if(t){ const c=t.dataset.toggle; S.expanded.has(c)?S.expanded.delete(c):S.expanded.add(c); render(true); return; }
+  const dt=e.target.closest('[data-dtab]'); if(dt){ const [c,k]=dt.dataset.dtab.split('|'); S.dtab[c]=k; render(true); return; }
+  const cd=e.target.closest('[data-calday]'); if(cd){ const [c,d]=cd.dataset.calday.split('|'); S.dtab[c]='days'; if(d<wkStart(addD(ASOF,-20))) S.fullDays.add(c); render(true); const r=document.getElementById('r-'+c+'-'+d); if(r){ r.scrollIntoView({block:'center'}); r.classList.add('flash'); } return; }
   const f=e.target.closest('[data-full]'); if(f){ const c=f.dataset.full; S.fullDays.has(c)?S.fullDays.delete(c):S.fullDays.add(c); render(true); return; }
   const u=e.target.closest('[data-undo]'); if(u){ const b=S.imports.find(x=>x.id===u.dataset.undo); LOGS=LOGS.filter(l=>l.batch!==b.id); b.undone=true; reindex(); toast(`ย้อนกลับ ${b.file} แล้ว`); render(true); }
 });
@@ -971,7 +1131,7 @@ document.getElementById('scrim').onclick=()=>{ document.getElementById('side').c
 document.getElementById('themeBtn').onclick=()=>{ const r=document.documentElement; const dark=r.dataset.theme? r.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme=dark?'light':'dark'; try{localStorage.setItem('mp-theme',r.dataset.theme)}catch(_){} render(true); };
 try{ const t=localStorage.getItem('mp-theme'); if(t) document.documentElement.dataset.theme=t; }catch(_){}
 // ลิงก์ตรง: #หน้า/รหัสโครงการ/บทบาท เช่น #plan/A69-A208/planning
-(()=>{ const [pg,code,role]=decodeURIComponent(location.hash.slice(1)).split('/'); if(role&&ROLES[role]) S.role=role; if(pg&&PAGES[pg]&&ROLES[S.role].pages.includes(pg)) S.page=pg; if(code&&P[code]){ S.page='plan'; S.q=code; S.expanded.add(code); } })();
+(()=>{ const [pg,code,role,tab]=decodeURIComponent(location.hash.slice(1)).split('/'); if(role&&ROLES[role]) S.role=role; if(pg&&PAGES[pg]&&ROLES[S.role].pages.includes(pg)) S.page=pg; if(code&&P[code]){ S.page='plan'; S.q=code; S.expanded.add(code); if(tab) S.dtab[code]=tab; } })();
 render();
 </script>
 </body>
