@@ -6,7 +6,7 @@
 
 | ตาราง | ที่มา | คอลัมน์สำคัญ |
 |---|---|---|
-| `profiles` | Supabase Auth | id → auth.users, full_name, role (`admin` `planning` `manager` `accounting` `production` `drive_team`), active |
+| `profiles` | Supabase Auth | id → auth.users, full_name, role (`admin` `planning` `manager` `accounting` `drive_team`), active |
 | `projects` | Pile A–Q (+ คิว-วัน/SO สำหรับโครงการที่ไม่มีใน Pile) | code PK (`A69-A101`), customer_name, project_name, agency, province, project_type, pm, sales, status (`ongoing` `on_hand` `hold` `completed` `cancelled`), order_qty, contract_value, value_per_pile, start_date, end_date, billing_cycle (Pile คอลัมน์ E แถว Actual), note |
 | `project_plan_days` | Pile แถว Plan (wide → long) | project_code, plan_date, planned_qty — PK (project_code, plan_date) |
 | `project_actual_legacy` | Pile แถว Actual ก่อนปี 2569 | project_code, work_date, qty (ใช้เฉพาะช่วงที่ไม่มีใน drive_logs) |
@@ -28,10 +28,9 @@
 | view | ใช้ที่ | คำนวณ |
 |---|---|---|
 | `v_project_actual_days` | ทุกที่ | รวม drive_logs + project_actual_legacy ต่อโครงการต่อวัน (ไม่นับซ้ำ) |
-| `v_project_so_net` | ทุกที่ | จำนวนสุทธิ (ต้น) และมูลค่าสุทธิ จากใบ P+R+C ต่อโครงการ (ตัดรายการบริการ) → ยอดสั่งซื้อหลัก; ไม่มีใบ P = ใช้ `projects.order_qty` จาก Master Planning |
+| `v_project_so_net` | ทุกที่ | จำนวนสุทธิ (ต้น) และมูลค่าสุทธิ จากใบ P+R+C ต่อโครงการ (ตัดรายการบริการ) → ตรวจเทียบกับ `projects.order_qty` (Master Planning = ตัวจริง); ใช้เป็นยอดสั่งซื้อเฉพาะโครงการที่ไม่มีใน Master Planning |
 | `v_project_progress` | M1, M2, M3 | ตอกแล้ว, คงเหลือ, แผนสะสมถึงวันล่าสุด, Ahead/Behind, อัตรา 28 วัน, วันคาดว่าเสร็จ, มูลค่าผลงาน |
 | `v_backlog` | M4 | Σ คงเหลือ ต้น/บาท แยกสถานะ, อัตราตอก/สัปดาห์, runway_weeks, ระดับสี |
-| `v_production_need` | M5 | แผนอนาคต − ตอกแล้ว ต่อ ขนาด × ความยาว × สัปดาห์ × โครงการ (ไม่มีคอลัมน์ราคา) |
 | `v_rig_schedule` | M6 | ปั้นจั่น × วัน × โครงการ × แผน (อิงปั้นจั่นล่าสุดที่ทำงานในโครงการ) |
 | `v_sales_monthly` | M3, M4 | ยอดขาย P/R/C และสุทธิ ต่อเดือน × เซลล์ × กลุ่มลูกค้า |
 | `v_billing_due` | M3 | มูลค่าผลงานงวดปัจจุบันตาม billing_cycle |
@@ -40,16 +39,16 @@
 
 ## สิทธิ์ (RLS)
 
-| ตาราง | admin | planning | manager | accounting | production | drive_team |
-|---|---|---|---|---|---|---|
-| projects | CRUD | CRUD | R | R | R (ไม่มีคอลัมน์ราคา — ใช้ view) | R |
-| project_plan_days | CRUD | CRUD | R | R | ผ่าน view | R |
-| drive_logs | CRUD | CRUD | R | R | ผ่าน view | R (C ถ้า Q3 = กรอกเอง) |
-| sales_docs, customers | CRUD | R | R | R | – | – |
-| master data (pile_sizes, rigs, companies) | CRUD | CRUD | R | R | R | R |
-| import_batches | CRUD | CRUD | – | – | – | – |
-| settings | CRUD | R | R | R | – | – |
-| profiles | CRUD | อ่านของตัวเอง | อ่านของตัวเอง | อ่านของตัวเอง | อ่านของตัวเอง | อ่านของตัวเอง |
+| ตาราง | admin | planning | manager | accounting | drive_team |
+|---|---|---|---|---|---|
+| projects | CRUD | CRUD | R | R | R |
+| project_plan_days | CRUD | CRUD | R | R | R |
+| drive_logs | CRUD | CRUD | R | R | R |
+| sales_docs, customers | CRUD | R | R | R | – |
+| master data (pile_sizes, rigs, companies) | CRUD | CRUD | R | R | R |
+| import_batches | CRUD | CRUD | – | – | – |
+| settings | CRUD | R | R | R | – |
+| profiles | CRUD | อ่านของตัวเอง | อ่านของตัวเอง | อ่านของตัวเอง | อ่านของตัวเอง |
 
 role อ่านผ่าน `public.my_role()` (security definer) จาก `profiles`
 

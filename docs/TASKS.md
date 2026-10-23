@@ -25,7 +25,7 @@ MVP = Phase 0–6 · ใช้คู่ขนานกับ Excel ใน Phase 
 - [ ] **T1.6** Seed Master Planning: Pile → `projects` + `project_plan_days` (wide→long, ข้าม `x`/ข้อความ, แปลงสถานะ, billing_cycle จากคอลัมน์ E แถว Actual) + `project_actual_legacy` — ตรวจ: AC1, AC2
 - [ ] **T1.7** Seed คิว-วัน → `drive_logs` (trim, alias, dedupe) — ตรวจ: AC3, รันซ้ำแถวไม่เพิ่ม
 - [ ] **T1.8** Seed SO `dataรวม` → `customers` + `sales_docs` (normalize กลุ่มลูกค้า, `#N/A` → null) — ตรวจ: AC4
-- [ ] **T1.8b** view `v_project_so_net` (จำนวน/มูลค่าสุทธิ P+R+C ต่อโครงการ ไม่นับบริการ) → ใช้เป็นยอดสั่งซื้อหลักของ `projects` ถ้าไม่มีใบ P ใช้ Master Planning — ตรวจ: AC11 (30/34 ตรง, 4 รายการขึ้นเตือน)
+- [ ] **T1.8b** view `v_project_so_net` (จำนวน/มูลค่าสุทธิ P+R+C ต่อโครงการ ไม่นับบริการ) → ใช้ตรวจเทียบกับ Master Planning (ตัวจริง) และเป็นยอดสั่งซื้อเฉพาะโครงการที่ไม่มีใน Master Planning — ตรวจ: AC11 (30/34 ตรง, 3 โครงการ A69 ขึ้นเตือน)
 - [ ] **T1.9** รายงานเทียบข้อมูล: Actual ใน Pile vs คิว-วัน ต่อโครงการ, รหัสโครงการที่ไม่เจอคู่ — ส่งให้ Planning ตรวจ
 
 ## Phase 2 — Login และโครงหน้า
@@ -56,22 +56,20 @@ MVP = Phase 0–6 · ใช้คู่ขนานกับ Excel ใน Phase 
 - [ ] **T5.2** ยอดขายสุทธิรายเดือน (P − R − C) แยกเซลล์/กลุ่มลูกค้า
 - [ ] **T5.3** Export xlsx + คัดลอกไป Excel
 
-## Phase 6 — M6 ฝ่ายตอก + Admin (M5 ผู้ผลิตเลื่อนไปทีหลัง)
-- [ ] **T6.1** ~~/production~~ → ย้ายไป "ทีหลัง" (หน่วยท่อน รอ Q11)
+## Phase 6 — M6 ฝ่ายตอก + Admin (ส่วนผู้ผลิตตัดออกจากขอบเขต 23 ต.ค. 69)
 - [ ] **T6.2** /drive คิวปั้นจั่น 7 วัน + ปั้นจั่นว่าง
 - [ ] **T6.3** Export Excel + ข้อความ LINE ของทั้งสองหน้า
 - [ ] **T6.4** /admin ผู้ใช้/บทบาท (เชิญอีเมล), master data, ตั้งค่า N สัปดาห์
 
 ## Phase 7 — ทดสอบ, Deploy, ใช้คู่ขนาน
 - [ ] **T7.1** Unit test: format, อ่านวันที่ พ.ศ./Excel serial, จับคู่หัวคอลัมน์, dedupe_key, สูตร Ahead/Behind/Runway
-- [ ] **T7.2** E2E Playwright ต่อบทบาท (planning import+undo, manager ดูอย่างเดียว, accounting export, production ไม่เห็นราคา) — ตรวจ: AC7, AC10
+- [ ] **T7.2** E2E Playwright ต่อบทบาท (planning import+undo, manager ดูอย่างเดียว, accounting export, drive_team ดูคิวปั้นจั่น) — ตรวจ: AC7, AC10
 - [ ] **T7.3** Security: ทุก Server Action มี requireRole, ไม่มี secret ใน bundle, Supabase Security Advisor ผ่าน
 - [ ] **T7.4** Supabase prod + Vercel deploy + Auth URL + bucket `imports`
 - [ ] **T7.5** README + คู่มือสั้นแต่ละบทบาท
 - [ ] **T7.6** ใช้คู่ขนานกับ Excel 2–4 สัปดาห์ เทียบตัวเลขทุกสัปดาห์ แล้วเลิกแก้ Excel
 
 ## ทีหลัง (หลัง MVP)
-- [ ] **M5 ผู้ผลิต**: ตารางแปลงต้น → ท่อน (รอ Q11) แล้วทำหน้า /production ยอดต้องผลิต/ส่งเป็นท่อน (ลูกค้า, โครงการ, แผน, ผลงาน, จำนวน, วันที่ ไม่มีราคา)
 - [ ] ล็อกงวดบัญชี + ติดตามวางบิล/รับเงิน
 - [ ] ประวัติการแก้ไข (audit log)
 - [ ] หัวหน้าสายกรอก Actual จากมือถือ
