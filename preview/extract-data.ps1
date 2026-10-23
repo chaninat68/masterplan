@@ -92,7 +92,7 @@ $so = ReadSheet $soFile 'dataรวม' 2 70
 $sales = New-Object System.Collections.Generic.List[object]
 foreach ($r in $so) {
   $t = S $r[1]; $d = D $r[2]; if (-not $t -or -not $d) { continue }
-  $sales.Add(@($t,$d,(S $r[4]),(I $r[5]),(I $r[8]),(I $r[9]),(N $r[21]),(I $r[26]),(I $r[43]),(I $r[45]),(I $r[47]),(N $r[18]),(I $r[42])))
+  $sales.Add(@($t,$d,(S $r[4]),(I $r[5]),(I $r[8]),(I $r[9]),(N $r[21]),(I $r[26]),(I $r[43]),(I $r[45]),(I $r[47]),(N $r[18]),(I $r[42]),(I $r[34])))
 }
 [Console]::Error.WriteLine("sales rows: $($sales.Count)")
 
