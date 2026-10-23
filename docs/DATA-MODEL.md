@@ -27,7 +27,7 @@
 
 | view | ใช้ที่ | คำนวณ |
 |---|---|---|
-| `v_project_actual_days` | ทุกที่ | รวม drive_logs + project_actual_legacy ต่อโครงการต่อวัน (ไม่นับซ้ำ) |
+| `v_project_actual_days` | ทุกที่ | drive_logs (ตัวจริง) + project_actual_legacy เฉพาะวันที่ก่อน 2026-01-01 ต่อโครงการต่อวัน |
 | `v_project_so_net` | ทุกที่ | จำนวนสุทธิ (ต้น) และมูลค่าสุทธิ จากใบ P+R+C ต่อโครงการ (ตัดรายการบริการ) → ตรวจเทียบกับ `projects.order_qty` (Master Planning = ตัวจริง); ใช้เป็นยอดสั่งซื้อเฉพาะโครงการที่ไม่มีใน Master Planning |
 | `v_project_progress` | M1, M2, M3 | ตอกแล้ว, คงเหลือ, แผนสะสมถึงวันล่าสุด, Ahead/Behind, อัตรา 28 วัน, วันคาดว่าเสร็จ, มูลค่าผลงาน |
 | `v_backlog` | M4 | Σ คงเหลือ ต้น/บาท แยกสถานะ, อัตราตอก/สัปดาห์, runway_weeks, ระดับสี |

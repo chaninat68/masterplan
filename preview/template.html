@@ -298,6 +298,7 @@ tr.today td{box-shadow:inset 0 2px 0 var(--accent)}
 const RAW = JSON.parse(document.getElementById('data').textContent);
 const DICT = RAW.dict;
 const PILE_ASOF = '2026-10-17';          // วันที่ของไฟล์ Master Planning Update 17-10-69
+const LOGS_FROM = '2026-01-01';          // ไฟล์คิว-วัน ปี 69 เริ่ม — ก่อนหน้านี้ใช้ Actual จาก Master Planning
 const STATUS = {'1-Ongoing':'ongoing','2-On Hand':'on_hand','3-Hold':'hold','5-Completed':'completed','6-ยกเลิก':'cancelled'};
 const ST_LABEL = {ongoing:'กำลังตอก',on_hand:'รอเริ่ม',hold:'พักงาน',completed:'เสร็จแล้ว',cancelled:'ยกเลิก'};
 const JOB2ST = {'จบงาน':'completed','กำลังดำเนินการ':'ongoing','รอดำเนินการ':'on_hand','มีปัญหา':'hold'};
@@ -357,8 +358,9 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 
 function actualMap(code){
   const p=P[code], m={};
-  if(p.fromPile){ for(const d in p.act) if(d<=PILE_ASOF) m[d]=p.act[d]; const lq=LQ[code]||{}; for(const d in lq) if(d>PILE_ASOF) m[d]=lq[d]; }
-  else Object.assign(m, LQ[code]||{});
+  // ไฟล์คิว-วันคือผลงานจริง (ผู้ใช้ยืนยัน 23 ต.ค. 69) — Actual ในแท็บ Pile ใช้เฉพาะก่อนปี 2569 ที่คิว-วันไม่มี
+  for(const d in p.act) if(d<LOGS_FROM) m[d]=p.act[d];
+  Object.assign(m, LQ[code]||{});
   Object.assign(m, store.edits.act[code]||{});
   for(const d in m) if(!m[d]) delete m[d];
   return m;
@@ -577,7 +579,6 @@ function projDetail(c){
   // size breakdown
   const sz={}; for(const l of logs){ const k=l.size+'|'+l.len; const o=sz[k]||(sz[k]={size:l.size,len:l.len,order:0,done:0,std:l.std}); o.order=Math.max(o.order,l.order); o.done+=l.qty; }
   const szRows=Object.values(sz).sort((x,y)=>x.size.localeCompare(y.size)||x.len-y.len);
-  const diffMP = p.fromPile? sum(Object.entries(LQ[c]||{}).filter(([d])=>d<=PILE_ASOF),([,v])=>v) - sum(Object.entries(p.act).filter(([d])=>d<=PILE_ASOF),([,v])=>v) : 0;
   return `<div class="detail-in">
     <div class="fields">
       ${fieldEd(c,'customer','ลูกค้า',p.customer)}${fieldEd(c,'pm','PM',p.pm)}${fieldEd(c,'sales','Sales',p.sales)}
@@ -589,7 +590,6 @@ function projDetail(c){
       <div><label>แผนสะสมถึง ${fDs(ASOF)}</label><b>${fN(g.planTo,1)}</b></div><div><label>เทียบแผน</label><b>${dChip(c)}</b></div>
       <div><label>อัตรา 14 วัน</label><b>${g.rate?fN(g.rate,1):'–'}</b> <span class="muted">ต้น/วัน</span></div><div><label>คาดว่าเสร็จ</label><b>${g.eta?fD(g.eta):'–'}</b></div>
     </div>
-    ${Math.abs(diffMP)>=1?`<div class="banner" style="background:var(--warn-soft)">${svg('alert','width="18" height="18"')}<div>ผลงานในไฟล์คิว-วัน ${diffMP>0?'มากกว่า':'น้อยกว่า'} Actual ใน Master Planning <b>${fN(Math.abs(diffMP),1)} ต้น</b> (ถึง ${fD(PILE_ASOF)}) — ระบบใช้ Master Planning เป็นหลักจนถึงวันนั้น และใช้ไฟล์คิว-วันหลังจากนั้น</div></div>`:''}
     ${p.fromPile&&SO[c]?.hasP&&Math.abs(SO[c].qty-p.order)>=0.5?`<div class="banner" style="background:var(--warn-soft)">${svg('alert','width="18" height="18"')}<div>ใบ P−R−C ในไฟล์ SO รวมได้ <b>${fN(SO[c].qty)} ต้น</b> ไม่ตรงกับ Master Planning <b>${fN(p.order)} ต้น</b> — ระบบใช้ Master Planning เป็นหลัก ควรตรวจใบเปลี่ยนแปลงในระบบขาย</div></div>`:''}
     ${SO[c]?soTable(c):''}
     <div class="grid g2" style="margin-bottom:16px">
@@ -692,11 +692,11 @@ VIEWS.import=()=>{
       <div id="impStatus"></div>
       ${pd?importPreview(pd):''}
     </div>
-    <div class="card"><div class="card-h"><div><h3>นำเข้าอัตโนมัติ (ระบบจริง)</h3><div class="sub">ข้อเสนอสำหรับเวอร์ชันใช้งานจริง</div></div></div>
+    <div class="card"><div class="card-h"><div><h3>ขั้นตอนประจำวัน</h3><div class="sub">ฝ่าย Planning นำเข้าเองทุกวัน · ไฟล์คิว-วันคือผลงานจริง</div></div></div>
       <div class="list">
-        <div class="li"><div class="ic" style="background:var(--i-blue);color:var(--s1)">${svg('doc')}</div><div class="t"><b>ทีมตอกวางไฟล์ในโฟลเดอร์กลาง</b><span>OneDrive / Google Drive ชื่อไฟล์เดิมทุกวัน</span></div></div>
-        <div class="li"><div class="ic" style="background:var(--i-amber);color:var(--warn-ink)">${svg('cal')}</div><div class="t"><b>ระบบดึงไฟล์อัตโนมัติทุกวัน 18:00 และ 07:00</b><span>ตรวจซ้ำด้วยคีย์ วันที่+โครงการ+ปั้นจั่น+หน้าตัด+ยาว+กะ+จำนวน</span></div></div>
-        <div class="li"><div class="ic" style="background:var(--i-green);color:var(--good-ink)">${svg('check')}</div><div class="t"><b>เพิ่มแถวใหม่ทันที · แถวผิดส่งแจ้งเตือน</b><span>ทุกครั้งที่นำเข้าย้อนกลับได้</span></div></div>
+        <div class="li"><div class="ic" style="background:var(--i-blue);color:var(--s1)">${svg('doc')}</div><div class="t"><b>1. รับไฟล์ "รายงานคิว-วัน" จากทีมตอก</b><span>ไฟล์สะสมทั้งปี รูปแบบเดิมทุกวัน</span></div></div>
+        <div class="li"><div class="ic" style="background:var(--i-amber);color:var(--warn-ink)">${svg('up')}</div><div class="t"><b>2. ลากไฟล์มาวาง แล้วตรวจตัวอย่าง</b><span>แถวที่มีแล้วข้ามให้เอง ดูเฉพาะแถวใหม่ / ผิด / เตือน</span></div></div>
+        <div class="li"><div class="ic" style="background:var(--i-green);color:var(--good-ink)">${svg('check')}</div><div class="t"><b>3. กดยืนยัน — ทุกหน้าอัพเดททันที</b><span>นำเข้าผิดกดย้อนกลับได้</span></div></div>
       </div>
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost sm" id="sampleBtn">${svg('dl')}สร้างไฟล์ตัวอย่างวันถัดไป</button><button class="btn ghost sm" id="tplBtn">${svg('dl')}แบบฟอร์มเปล่า</button></div>
     </div>
