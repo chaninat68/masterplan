@@ -18,3 +18,11 @@ coverage/
 .vercel/
 .DS_Store
 Thumbs.db
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+
+# playwright
+test-results/
+playwright-report/
+blob-report/

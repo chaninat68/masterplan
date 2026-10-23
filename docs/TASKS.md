@@ -5,6 +5,24 @@ MVP = Phase 0–6 · ใช้คู่ขนานกับ Excel ใน Phase 
 
 ---
 
+## สถานะ ณ 23 ต.ค. 2569 — เว็บจริงเวอร์ชันแรกเสร็จ
+**เสร็จแล้ว** (ตรวจด้วย `npm test` 12 ข้อ + `npm run e2e` 4 ข้อ ผ่านทั้งหมด)
+- Phase 0: Node 24, Next.js 16.4 + Supabase, `.env.local`, Supabase MCP
+- Phase 1: migration 6 ไฟล์ (ตาราง, RLS, view, ฟังก์ชันนำเข้า, view กราฟ, index) · ข้อมูลจริงเข้าผ่านหน้านำเข้า: 403 โครงการ, แผน 10,571 วัน, คิว-วัน 9,287 แถว (61,434 ต้น), SO 2,807 รายการ — AC1–AC4 ตรง
+- Phase 2: login, ROLE_CONFIG, กันหน้า + RLS, AppShell, ธีมมืด, format พ.ศ.
+- Phase 3: รายการโครงการ, หน้าโครงการ (แก้ข้อมูลโครงการ, ตารางแผนเทียบผลงานรายสัปดาห์, แก้แผนรายวัน, หมายเหตุ + ปุ่มเหตุผลด่วน, บันทึกยอดตอกเอง, S-curve, ขนาดเสา, ใบ P−R−C), นำเข้า 3 ไฟล์ + ย้อนกลับ, Export Master Planning
+- Phase 4–6: ภาพรวม, รายงานประจำวัน + ส่ง LINE, การเงิน/วางบิล + Export/คัดลอก, ยอดขาย & Runway (ตั้ง N ได้), คิวปั้นจั่น + Export/LINE, ตั้งค่า (บทบาทผู้ใช้, เกณฑ์, ข้อมูลหลัก)
+
+**ยังเหลือ**
+- [ ] สร้างบัญชีจริงทั้ง 5 บทบาท แล้วลบบัญชีทดสอบ `qa-admin@masterplan-qa.dev`
+- [ ] Supabase Auth: ปิด "Allow new users to sign up", เปิด Leaked password protection
+- [ ] เปลี่ยน GitHub repo เป็น Private (ตอนนี้ public)
+- [ ] Deploy Vercel (T7.4) + ตั้ง Site URL / Redirect URLs
+- [ ] E2E ต่อบทบาท (manager/accounting/drive_team ดูอย่างเดียว) — ต้องมีบัญชีทดสอบแต่ละบทบาท
+- [ ] แผน grid: วางค่าจาก Excel / ตัวช่วยกระจายแผนหลายวัน, เก็บไฟล์ต้นฉบับใน Storage
+- [ ] สร้าง TypeScript types จาก schema (`supabase gen types`)
+- [ ] เชิญผู้ใช้ด้วยอีเมลจากหน้าเว็บ (ต้องใช้ secret key ฝั่ง server)
+
 ## Phase −1 — พรีวิวดีไซน์
 - [x] **TP.1** พรีวิว HTML ไฟล์เดียวด้วยข้อมูลจริง ครบทุกโมดูล + สลับบทบาท (`preview/build-preview.ps1` → `preview/master-planning-preview.html`)
 - [ ] **TP.2** ผู้ใช้ทดลองและให้ feedback ดีไซน์/ระบบ ก่อนเริ่ม Phase 0

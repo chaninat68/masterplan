@@ -96,14 +96,22 @@ ROLE_CONFIG ไฟล์เดียวกำหนดเมนู/หน้า�
 - คำนวณตัวเลขใน SQL view / server ไม่ส่งข้อมูลดิบทั้งหมดไปเบราว์เซอร์
 - ทำทีละ task ตาม `docs/TASKS.md` แล้วติ๊ก [x] เมื่อเสร็จ
 
-## คำสั่ง (จะใช้ได้หลัง Phase 0)
+## คำสั่ง
 ```
 npm run dev        # http://localhost:3000
 npm run build
 npm run lint
 npm run typecheck
-npm test           # Vitest
-npm run e2e        # Playwright
-npm run seed       # นำเข้า Excel → Supabase (ใช้ .env.local)
-supabase db push   # รัน migration
+npm test           # Vitest (src/**/*.test.ts) — มีทดสอบ parser กับไฟล์จริงถ้ามีในเครื่อง
+npm run e2e        # Playwright + Microsoft Edge — ใช้ E2E_EMAIL/E2E_PASSWORD ใน .env.local
 ```
+- Node.js อยู่ที่ `%LOCALAPPDATA%\Programs\node-v24.22.1-win-x64` (portable, อยู่ใน PATH ของผู้ใช้)
+- ไม่มีสคริปต์ seed: ข้อมูลตั้งต้นนำเข้าผ่านหน้า /import (Master Planning → คิว-วัน → SO)
+- Migration รันผ่าน Supabase MCP (`apply_migration`) และเก็บไฟล์เดียวกันใน `supabase/migrations/`
+
+## โครงสร้างโค้ด
+- Next.js 16.4: ใช้ `src/proxy.ts` (แทน middleware), `PageProps`/`LayoutProps` ที่ generate อัตโนมัติ, ปิด `cacheComponents` (ทุกหน้าเป็น dynamic ตาม session) — อ่าน `node_modules/next/dist/docs/` ก่อนใช้ API ใหม่
+- `src/lib/roles.ts` = ROLE_CONFIG · `src/lib/auth.ts` = getCurrentUser/requirePage/requireRole
+- `src/lib/data.ts` = ดึงโครงการ + `v_project_progress`, backlog · `fetchAll()` ใน `src/lib/supabase/server.ts` (PostgREST คืนสูงสุด 1,000 แถว/ครั้ง)
+- `src/lib/import/*` = parser ไฟล์ Excel (ทำงานฝั่ง server) → ฟังก์ชัน SQL `import_drive_logs` / `import_master_planning` / `import_sales`
+- ดีไซน์: CSS ใน `src/app/globals.css` (ย้ายมาจาก `preview/template.html`), กราฟ Recharts ใน `src/components/charts.tsx`
