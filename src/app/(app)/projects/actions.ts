@@ -28,6 +28,7 @@ async function run(fn: () => Promise<void>, paths: string[]): Promise<ActionResu
 const FIELDS = {
   customer_name: z.string().trim().max(300),
   project_name: z.string().trim().max(300),
+  agency: z.string().trim().max(300),
   pm: z.string().trim().max(100),
   sales: z.string().trim().max(100),
   billing_cycle: z.string().trim().max(300),

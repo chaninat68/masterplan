@@ -50,11 +50,11 @@ export default async function FinancePage() {
         <Kpi tone="amber" icon="cal" label="มูลค่างานคงเหลือ" value={fBaht(bl.backlog_value)} cmp={<div className="cmp">โครงการกำลังตอก + รอเริ่ม</div>} />
       </div>
       <div className="card mb">
-        <CardHead title={`รายงานวางบิล เดือน ${fMonth(month)}`} sub={`มูลค่าผลงาน = ต้นที่ตอก × มูลค่าเฉลี่ย/ต้น · รอบวางบิลกำหนดเองได้ต่อโครงการ${user.canEdit ? " (คลิกเพื่อแก้)" : ""}`} />
+        <CardHead title={`รายงานวางบิล เดือน ${fMonth(month)}`} sub={`มูลค่าผลงาน = ต้นที่ตอก × มูลค่าเฉลี่ย/ต้น · เงื่อนไขการส่งมอบงานกำหนดเองได้ต่อโครงการ${user.canEdit ? " (คลิกเพื่อแก้)" : ""}`} />
         {rows.length ? (
           <div className="tbl-wrap">
             <table>
-              <thead><tr><th>โครงการ</th><th>ลูกค้า</th><th>รอบส่งมอบ / วางบิล</th><th className="num">ตอกแล้ว</th><th className="num">มูลค่า/ต้น</th><th className="num">มูลค่าผลงานสะสม</th><th className="num">ต้นเดือนนี้</th><th className="num">มูลค่าเดือนนี้</th></tr></thead>
+              <thead><tr><th>โครงการ</th><th>ลูกค้า</th><th>เงื่อนไขการส่งมอบงาน</th><th className="num">ตอกแล้ว</th><th className="num">มูลค่า/ต้น</th><th className="num">มูลค่าผลงานสะสม</th><th className="num">ต้นเดือนนี้</th><th className="num">มูลค่าเดือนนี้</th></tr></thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.code}>

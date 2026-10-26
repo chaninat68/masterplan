@@ -149,16 +149,16 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
           <CardHead title="งานในมือ" sub={`คงเหลือ ${fNum(bl.backlog_qty)} ต้น · ${fBaht(bl.backlog_value)}`} href="/sales" linkLabel="ดูเพิ่ม" />
           <div className="donut-wrap sm">
             <div className="donut-box">
-              <Donut unit="ต้น" data={[{ name: "กำลังตอก", value: bl.ongoing_qty, color: "var(--s1)" }, { name: "รอเริ่ม", value: bl.on_hand_qty, color: "var(--s2)" }, { name: "พักงาน", value: bl.hold_qty, color: "var(--line-2)" }]} />
+              <Donut unit="ต้น" data={[{ name: "กำลังตอก", value: bl.ongoing_qty, color: "var(--s1)" }, { name: "รอเริ่ม", value: bl.on_hand_qty, color: "var(--s2)" }, { name: "ชะลอโครงการ", value: bl.hold_qty, color: "var(--line-2)" }]} />
               <div className="donut-c"><div><b>{runwayTxt}</b><span>สัปดาห์</span></div></div>
             </div>
             <div className="dl">
               <div><i style={{ background: "var(--s1)" }} /><span>กำลังตอก</span><b>{fNum(bl.ongoing_qty)}</b><span className="p">ต้น</span></div>
               <div><i style={{ background: "var(--s2)" }} /><span>รอเริ่ม</span><b>{fNum(bl.on_hand_qty)}</b><span className="p">ต้น</span></div>
-              <div><i style={{ background: "var(--line-2)" }} /><span>พักงาน*</span><b>{fNum(bl.hold_qty)}</b><span className="p">ต้น</span></div>
+              <div><i style={{ background: "var(--line-2)" }} /><span>ชะลอโครงการ*</span><b>{fNum(bl.hold_qty)}</b><span className="p">ต้น</span></div>
             </div>
           </div>
-          <div className="sub" style={{ marginTop: 8 }}>อัตราตอก {fNum(bl.rate_per_week)} ต้น/สัปดาห์ · * พักงานไม่นับใน Runway</div>
+          <div className="sub" style={{ marginTop: 8 }}>อัตราตอก {fNum(bl.rate_per_week)} ต้น/สัปดาห์ · * ชะลอโครงการไม่นับใน Runway</div>
         </div>
         <div className="card">
           <CardHead title="สถานะโครงการ" sub={`ทั้งหมด ${projects.length} โครงการ`} />

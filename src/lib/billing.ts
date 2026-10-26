@@ -27,6 +27,6 @@ export async function getBilling(supabase: Supa): Promise<{ asof: string; month:
   return { asof, month, rows };
 }
 
-export const BILLING_HEADERS = ["รหัสโครงการ", "โครงการ", "ลูกค้า", "รอบวางบิล", "ตอกแล้ว", "มูลค่า/ต้น", "มูลค่าผลงานสะสม", "ต้นเดือนนี้", "มูลค่าเดือนนี้"];
+export const BILLING_HEADERS = ["รหัสโครงการ", "โครงการ", "ลูกค้า", "เงื่อนไขการส่งมอบงาน", "ตอกแล้ว", "มูลค่า/ต้น", "มูลค่าผลงานสะสม", "ต้นเดือนนี้", "มูลค่าเดือนนี้"];
 export const billingRow = (r: BillingRow) => [r.code, r.name, r.customer, r.billing, round(r.done), round(r.vpp), round(r.valueDone), round(r.monthQty), round(r.monthValue)];
 const round = (n: number) => Math.round(n * 100) / 100;

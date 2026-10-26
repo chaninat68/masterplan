@@ -62,7 +62,7 @@ export function todayBangkok(): string {
 export const STATUS_LABEL: Record<string, string> = {
   ongoing: "กำลังตอก",
   on_hand: "รอเริ่ม",
-  hold: "พักงาน",
+  hold: "ชะลอโครงการ",
   completed: "เสร็จแล้ว",
   cancelled: "ยกเลิก",
 };

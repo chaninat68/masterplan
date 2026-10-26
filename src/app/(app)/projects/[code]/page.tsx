@@ -30,7 +30,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
   if (!p) notFound();
 
   const showSales = canSeeSales(user.role);
-  const [plans, actuals, logs, notesRes, so] = await Promise.all([
+  const [plans, actuals, logs, notesRes, so, siteRes] = await Promise.all([
     fetchAll<{ plan_date: string; planned_qty: number }>((a, b) => supabase.from("project_plan_days").select("plan_date, planned_qty").eq("project_code", code).order("plan_date").range(a, b)),
     fetchAll<{ work_date: string; qty: number }>((a, b) => supabase.from("v_project_actual_days").select("work_date, qty").eq("project_code", code).order("work_date").range(a, b)),
     fetchAll<DayLog>((a, b) => supabase.from("drive_logs").select("id, work_date, rig_name, rig_type, size_code, length_m, shift, qty, leader, company_raw, source").eq("project_code", code).gt("qty", 0).order("work_date").range(a, b)),
@@ -38,7 +38,10 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
     showSales
       ? fetchAll<SoDoc>((a, b) => supabase.from("sales_docs").select("doc_type, doc_date, group_product, item_kind, qty, amount, approval_status").eq("project_code", code).order("doc_date").range(a, b))
       : Promise.resolve([] as SoDoc[]),
+    supabase.from("drive_logs").select("agency").eq("project_code", code).neq("agency", "").order("work_date", { ascending: false }).limit(1).maybeSingle(),
   ]);
+  // หน่วยงาน: ค่าที่แก้ในเว็บ ถ้าไม่มีใช้ค่าล่าสุดจากไฟล์คิว-วัน
+  const agency = p.agency || siteRes.data?.agency || "";
 
   const plan: Record<string, number> = Object.fromEntries(plans.map((x) => [x.plan_date, Number(x.planned_qty)]));
   const actual: Record<string, number> = Object.fromEntries(actuals.map((x) => [x.work_date, Number(x.qty)]));
@@ -79,6 +82,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
       <div className="fields mb">
         <div><label>ลูกค้า</label><InlineEdit canEdit={ce} value={p.customer_name} onSave={save("customer_name")} /></div>
         <div><label>ชื่อโครงการ</label><InlineEdit canEdit={ce} value={p.project_name} onSave={save("project_name")} /></div>
+        <div><label>หน่วยงาน</label><InlineEdit canEdit={ce} value={agency} placeholder="+ ระบุหน่วยงาน" onSave={save("agency")} /></div>
         <div><label>PM</label><InlineEdit canEdit={ce} value={p.pm} onSave={save("pm")} /></div>
         <div><label>Sales</label><InlineEdit canEdit={ce} value={p.sales} onSave={save("sales")} /></div>
         <div><label>สถานะ</label><InlineEdit canEdit={ce} type="select" value={p.status} display={<StatusBadge status={p.status} />} onSave={save("status")}
@@ -86,9 +90,9 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
         <div><label>กำหนดเริ่ม</label><InlineEdit canEdit={ce} type="date" value={p.start_date ?? ""} display={fDate(p.start_date)} onSave={save("start_date")} /></div>
         <div><label>กำหนดเสร็จ</label><InlineEdit canEdit={ce} type="date" value={p.end_date ?? ""} display={fDate(p.end_date)} onSave={save("end_date")} /></div>
         <div><label>ยอดสั่งซื้อ (ต้น) · {p.order_source === "master_planning" ? "Master Planning" : p.order_source === "sales" ? "ใบ P−R−C" : "คิว-วัน"}</label><InlineEdit canEdit={ce} type="number" value={String(p.order_qty)} display={fNum(p.order_qty)} onSave={save("order_qty")} /></div>
-        {showSales && <div><label>มูลค่าโครงการ</label><InlineEdit canEdit={ce} type="number" value={String(p.contract_value)} display={fBaht2(p.contract_value)} onSave={save("contract_value")} /></div>}
+        {showSales && <div><label>มูลค่าโครงการ (Vat)</label><InlineEdit canEdit={ce} type="number" value={String(p.contract_value)} display={fBaht2(p.contract_value)} onSave={save("contract_value")} /></div>}
         {showSales && <div><label>มูลค่าเฉลี่ย/ต้น</label><InlineEdit canEdit={ce} type="number" value={String(p.value_per_pile)} display={fBaht2(p.value_per_pile)} onSave={save("value_per_pile")} /></div>}
-        <div><label>รอบส่งมอบ / วางบิล</label><InlineEdit canEdit={ce} value={p.billing_cycle} placeholder="+ กำหนดรอบ" onSave={save("billing_cycle")} /></div>
+        <div><label>เงื่อนไขการส่งมอบงาน</label><InlineEdit canEdit={ce} value={p.billing_cycle} placeholder="+ กำหนดเงื่อนไข" onSave={save("billing_cycle")} /></div>
       </div>
 
       <div className="mini">
@@ -113,7 +117,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
       </div>
 
       {tab === "days" && (
-        <DayGrid code={code} asof={asof} canEdit={ce} plan={plan} actual={actual} notes={notes} coNotes={coNotes}
+        <DayGrid code={code} asof={asof} canEdit={ce} orderQty={p.order_qty} plan={plan} actual={actual} notes={notes} coNotes={coNotes}
           logs={logs.filter((l) => l.work_date >= addDays(asof, -400))} finished={p.status === "completed" || p.status === "cancelled"} />
       )}
       {tab === "curve" && (

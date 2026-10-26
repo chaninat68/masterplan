@@ -433,3 +433,25 @@ a.icon-btn{text-decoration:none}
 .can-edit .ed:hover{outline-color:var(--accent);background:var(--accent-soft)}
 .ed{display:inline-block;min-width:24px}
 .me .who span{display:block}
+/* แผนเทียบผลงานรายวัน (ตารางแนวนอนแบบ Excel) */
+.ptbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table.ptbl{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:13px;width:max-content;min-width:100%}
+.ptbl th,.ptbl td{padding:7px 8px;text-align:center;min-width:46px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);cursor:pointer;white-space:nowrap}
+.ptbl tr:last-child>*{border-bottom:0}
+.ptbl thead th{font-weight:600;font-size:12px;color:var(--ink-2);background:var(--surface-2);position:relative}
+.ptbl thead th small{display:block;font-weight:400;font-size:10.5px;color:var(--muted)}
+.ptbl thead th.sun{color:var(--bad-ink)}
+.ptbl thead th.today{color:var(--accent)}
+.ptbl thead th .ni{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--warn)}
+.ptbl .lab{position:sticky;left:0;z-index:1;text-align:left;min-width:110px;background:var(--surface-2);color:var(--ink);font-weight:600;cursor:default}
+.ptbl .tot{background:var(--surface-2);font-weight:600;cursor:default;min-width:72px}
+.ptbl td.pc{color:var(--ink-2);font-size:12px}
+.ptbl .st-ok,.ptbl .st-extra{background:var(--good-soft);color:var(--good-ink);font-weight:600}
+.ptbl .st-part{background:var(--warn-soft);color:var(--warn-ink);font-weight:600}
+.ptbl .st-miss{background:var(--bad-soft);color:var(--bad-ink);font-weight:600}
+.ptbl .st-off{background:repeating-linear-gradient(135deg,var(--surface-3) 0 4px,var(--surface) 4px 8px);color:var(--muted);font-size:11.5px}
+.ptbl .sel{box-shadow:inset 2px 0 0 var(--accent),inset -2px 0 0 var(--accent)}
+.ptbl thead th.sel{box-shadow:inset 2px 0 0 var(--accent),inset -2px 0 0 var(--accent),inset 0 2px 0 var(--accent)}
+.ptbl tbody tr:last-child td.sel{box-shadow:inset 2px 0 0 var(--accent),inset -2px 0 0 var(--accent),inset 0 -2px 0 var(--accent)}
+.ptbl td:not(.tot):hover{background-color:var(--accent-soft)}
+.ptbl thead th.m1{border-left:2px solid var(--line-2)}

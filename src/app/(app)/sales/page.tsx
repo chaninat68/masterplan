@@ -61,7 +61,7 @@ export default async function SalesPage() {
             <div><label>งานคงเหลือ</label><b>{fNum(bl.backlog_qty)}</b> <span className="muted">ต้น</span></div>
             <div><label>มูลค่าคงเหลือ</label><b>{fBaht(bl.backlog_value)}</b></div>
             <div><label>อัตราตอก</label><b>{fNum(bl.rate_per_week)}</b> <span className="muted">ต้น/สัปดาห์</span></div>
-            <div><label>พักงาน (ไม่นับ)</label><b>{fNum(bl.hold_qty)}</b> <span className="muted">ต้น</span></div>
+            <div><label>ชะลอโครงการ (ไม่นับ)</label><b>{fNum(bl.hold_qty)}</b> <span className="muted">ต้น</span></div>
           </div>
         </div>
         <div className="card">

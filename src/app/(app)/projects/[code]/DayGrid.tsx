@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { addDays, dayRange, dow, fDate, fDateShort, fNum, TH_DAYS, TH_MONTHS, weekStart } from "@/lib/format";
+import { addDays, dayRange, dow, fDate, fNum, TH_DAYS } from "@/lib/format";
 import { InlineEdit } from "@/components/InlineEdit";
 import { Icon } from "@/components/Icon";
 import { addManualLog, deleteManualLog, setNote, setPlanDay } from "../actions";
@@ -19,19 +19,15 @@ const ST: Record<Status, [string, string]> = {
 const QUICK = ["ฝนตก", "น้ำท่วม", "รอพื้นที่", "เครื่องเสีย", "วันหยุด", "รอใบอนุญาต", "ลูกค้าสั่งหยุด"];
 
 export function DayGrid(props: {
-  code: string; asof: string; canEdit: boolean; finished: boolean;
+  code: string; asof: string; canEdit: boolean; finished: boolean; orderQty: number;
   plan: Record<string, number>; actual: Record<string, number>;
   notes: Record<string, string>; coNotes: Record<string, string>; logs: DayLog[];
 }) {
   const { code, asof, plan, actual, notes, coNotes, canEdit } = props;
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [fullPast, setFullPast] = useState(false);
-  const [fullFut, setFullFut] = useState(false);
 
   const keys = [...Object.keys(plan), ...Object.keys(actual), ...Object.keys(notes)].sort();
-  const first = keys[0] ?? asof;
-  const lastPlan = props.finished ? undefined : Object.keys(plan).filter((d) => d > asof).sort().pop();
   const pastKeys = keys.filter((d) => d <= asof);
   const [sel, setSel] = useState(pastKeys[pastKeys.length - 1] ?? asof);
 
@@ -46,13 +42,26 @@ export function DayGrid(props: {
     return pv ? "miss" : "none";
   };
 
-  const curW = weekStart(asof);
-  const startW = fullPast ? weekStart(first) : [weekStart(addDays(asof, -20)), weekStart(first)].sort()[1];
-  const futEndW = lastPlan ? weekStart(lastPlan) : curW;
-  const endW = fullFut ? futEndW : [futEndW, addDays(curW, 21)].sort()[0];
-  const weeks: string[] = [];
-  for (let w = [startW, endW].sort()[0]; w <= endW; w = addDays(w, 7)) weeks.push(w);
-  const morePast = weekStart(first) < startW, moreFut = futEndW > endW;
+  // ตารางแนวนอนทั้งโครงการ (รูปแบบเดียวกับ Excel: วันที่ / แผนงาน / ผลงาน / ผลงานสะสม / % การทำงาน)
+  const workKeys = [...Object.keys(plan), ...Object.keys(actual)].sort();
+  const days = dayRange(workKeys[0] ?? asof, workKeys[workKeys.length - 1] ?? asof);
+  const cum: Record<string, number> = {};
+  let run = 0;
+  for (const x of days) {
+    if (x > asof) break;
+    run += actual[x] ?? 0;
+    cum[x] = run;
+  }
+  const tPlan = days.reduce((t, x) => t + (plan[x] ?? 0), 0);
+  const lastPast = [...days].reverse().find((x) => x <= asof);
+  const pct = (x: string) => (props.orderQty > 0 && cum[x] != null ? (cum[x] / props.orderQty) * 100 : null);
+  const lastPct = lastPast ? pct(lastPast) : null;
+  const selRef = useRef<HTMLTableCellElement>(null);
+  useEffect(() => {
+    const th = selRef.current, wrap = th?.closest(".ptbl-wrap");
+    if (th && wrap) wrap.scrollLeft = th.offsetLeft - wrap.clientWidth / 2;
+  }, []);
+  const pick = setSel;
 
   // รายละเอียดวันที่เลือก
   const d = sel, pv = plan[d] ?? 0, av = actual[d] ?? 0, st = status(d), past = d <= asof, ls = byDay.get(d) ?? [];
@@ -76,57 +85,64 @@ export function DayGrid(props: {
       <div className="sec-h">
         <span className="muted">{canEdit ? "คลิกวันเพื่อดูรายละเอียด และแก้แผน / ผลงาน / หมายเหตุ" : "คลิกวันเพื่อดูรายละเอียด"}</span>
         <span className="grow" />
-        {(morePast || fullPast) && <button className="btn ghost sm" onClick={() => setFullPast(!fullPast)}>{fullPast ? "ย่อย้อนหลัง" : "ย้อนหลังทั้งหมด"}</button>}
-        {(moreFut || fullFut) && <button className="btn ghost sm" onClick={() => setFullFut(!fullFut)}>{fullFut ? "ย่อแผนล่วงหน้า" : "แผนล่วงหน้าทั้งหมด"}</button>}
       </div>
       <div className="cal-legend">
         <span><i style={{ background: "var(--good-soft)" }} />ถึงแผน</span><span><i style={{ background: "var(--warn-soft)" }} />ไม่ถึงแผน</span>
         <span><i style={{ background: "var(--bad-soft)" }} />มีแผนแต่ไม่ได้ตอก</span>
         <span><i style={{ background: "repeating-linear-gradient(135deg,var(--surface-3) 0 3px,var(--surface) 3px 6px)" }} />หยุด (มีหมายเหตุ)</span>
-        <span><i style={{ borderStyle: "dashed" }} />แผนล่วงหน้า</span>
         <span><i style={{ background: "var(--warn)", borderRadius: "50%", width: 8, height: 8 }} />มีหมายเหตุ</span>
       </div>
 
-      <div className="wgrid">
-        <div className="wh blank" />
-        {["จ", "อ", "พ", "พฤ", "ศ", "ส", "อา"].map((h) => <div key={h} className="wh">{h}</div>)}
-        {weeks.map((w) => {
-          const ds = dayRange(w, addDays(w, 6));
-          const wp = ds.reduce((s, x) => s + (plan[x] ?? 0), 0);
-          const wpPast = ds.reduce((s, x) => s + (x <= asof ? plan[x] ?? 0 : 0), 0);
-          const wa = ds.reduce((s, x) => s + (x <= asof ? actual[x] ?? 0 : 0), 0);
-          const rate = wpPast ? (wa / wpPast) * 100 : null;
-          return [
-            <div key={w} className={`wl ${w === curW ? "cur" : ""}`}>
-              <span>{fDateShort(w)} – {fDateShort(addDays(w, 6))}{w === curW ? " · สัปดาห์นี้" : ""}</span>
-              <b>แผน {fNum(wp, 1)}{w <= asof ? ` · ทำ ${fNum(wa, 1)}` : ""}</b>
-              {rate != null && <em className={rate >= 100 ? "up" : rate >= 80 ? "tag-warn" : "down"}>{fNum(rate)}% ของแผน</em>}
-            </div>,
-            ...ds.map((x) => {
-              const xp = plan[x] ?? 0, xa = actual[x] ?? 0, s = status(x), note = noteOf(x), xpast = x <= asof;
-              const r = xp ? Math.min(1, xa / xp) : xa ? 1 : 0;
-              const dn = Number(x.slice(8)) === 1 ? `1 ${TH_MONTHS[Number(x.slice(5, 7)) - 1]}` : Number(x.slice(8));
-              return (
-                <button key={x} className={`dc2 ${s} ${x === sel ? "sel" : ""} ${x === asof ? "today" : ""}`} onClick={() => setSel(x)}
-                  title={`${fDate(x)} · แผน ${fNum(xp, 1)}${xpast ? ` · ทำจริง ${fNum(xa, 1)}` : ""}${note ? ` · ${note}` : ""}`}>
-                  <span className="dn">{dn}</span>
-                  {note && <i className="ni" />}
-                  {xpast ? (xp || xa ? (<><span className="pl">แผน {xp ? fNum(xp, 1) : "–"}</span><span className="ac">{xa ? fNum(xa, 1) : "0"}</span><span className="mb"><i style={{ width: `${(r * 100).toFixed(0)}%` }} /></span></>)
-                    : note ? <span className="pl" style={{ marginTop: "auto" }}>หยุด</span> : null)
-                    : xp ? (<><span className="pl">แผน</span><span className="ac">{fNum(xp, 1)}</span></>) : null}
-                </button>
-              );
-            }),
-          ];
-        })}
+      <div className="ptbl-wrap">
+        <table className="ptbl">
+          <thead>
+            <tr>
+              <th className="lab">วันที่</th>
+              {days.map((x) => (
+                <th key={x} ref={x === sel ? selRef : undefined} className={`${x === sel ? "sel" : ""} ${x === asof ? "today" : ""} ${dow(x) === 0 ? "sun" : ""} ${x.endsWith("-01") ? "m1" : ""}`} onClick={() => pick(x)} title={fDate(x)}>
+                  {Number(x.slice(8))}/{Number(x.slice(5, 7))}<small>{TH_DAYS[dow(x)]}</small>{noteOf(x) && <i className="ni" />}
+                </th>
+              ))}
+              <th className="tot">รวม</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th className="lab">แผนงาน</th>
+              {days.map((x) => <td key={x} className={x === sel ? "sel" : ""} onClick={() => pick(x)}>{plan[x] ? fNum(plan[x], 1) : ""}</td>)}
+              <td className="tot">{fNum(tPlan, 1)}</td>
+            </tr>
+            <tr>
+              <th className="lab">ผลงาน</th>
+              {days.map((x) => {
+                const s = status(x);
+                return <td key={x} className={`st-${s} ${x === sel ? "sel" : ""}`} onClick={() => pick(x)} title={noteOf(x)}>
+                  {x > asof ? "" : actual[x] ? fNum(actual[x], 1) : s === "miss" ? "0" : s === "off" ? "หยุด" : ""}
+                </td>;
+              })}
+              <td className="tot">{lastPast ? fNum(cum[lastPast], 1) : "–"}</td>
+            </tr>
+            <tr>
+              <th className="lab">ผลงานสะสม</th>
+              {days.map((x) => <td key={x} className={x === sel ? "sel" : ""} onClick={() => pick(x)}>{cum[x] != null ? fNum(cum[x], 1) : ""}</td>)}
+              <td className="tot">{lastPast ? fNum(cum[lastPast], 1) : "–"}</td>
+            </tr>
+            <tr>
+              <th className="lab">% การทำงาน</th>
+              {days.map((x) => { const v = pct(x); return <td key={x} className={`pc ${x === sel ? "sel" : ""}`} onClick={() => pick(x)}>{v != null ? `${fNum(v)}%` : ""}</td>; })}
+              <td className="tot">{lastPct != null ? `${fNum(lastPct)}%` : "–"}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+      <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>% การทำงาน = ผลงานสะสม ÷ ยอดสั่งซื้อ {fNum(props.orderQty)} ต้น</div>
 
       <div className="daypanel">
         <div className="card-h" style={{ marginBottom: 6 }}>
           <div><h3>{TH_DAYS[dow(d)]} {fDate(d)}</h3><div className="sub">{d === asof ? "วันล่าสุดที่มีข้อมูล" : past ? "ผลงานที่ผ่านมา" : "แผนล่วงหน้า"}</div></div>
           <div style={{ display: "flex", gap: 6 }}>
-            <button className="btn ghost sm" onClick={() => setSel(addDays(d, -1))}>‹ วันก่อน</button>
-            <button className="btn ghost sm" onClick={() => setSel(addDays(d, 1))}>วันถัดไป ›</button>
+            <button className="btn ghost sm" onClick={() => pick(addDays(d, -1))}>‹ วันก่อน</button>
+            <button className="btn ghost sm" onClick={() => pick(addDays(d, 1))}>วันถัดไป ›</button>
           </div>
         </div>
         <div className="dp-grid">
@@ -169,3 +185,4 @@ export function DayGrid(props: {
     </div>
   );
 }
+
