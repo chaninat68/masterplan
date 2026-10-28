@@ -455,3 +455,8 @@ table.ptbl{border-collapse:separate;border-spacing:0;font-variant-numeric:tabula
 .ptbl tbody tr:last-child td.sel{box-shadow:inset 2px 0 0 var(--accent),inset -2px 0 0 var(--accent),inset 0 -2px 0 var(--accent)}
 .ptbl td:not(.tot):hover{background-color:var(--accent-soft)}
 .ptbl thead th.m1{border-left:2px solid var(--line-2)}
+/* โลโก้ Master Planning */
+.logo-svg{flex:none;border-radius:9px;box-shadow:0 6px 16px rgb(31 42 68 / 28%),0 0 0 1px var(--line-2)}
+.logo-text{display:flex;flex-direction:column;line-height:1.02;letter-spacing:.06em;color:var(--ink)}
+.logo-text b{font-size:16px;font-weight:700}
+.logo-text span{font-size:13.5px;font-weight:400;letter-spacing:.09em}

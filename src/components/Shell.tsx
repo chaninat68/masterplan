@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { Icon } from "./Icon";
+import { Logo } from "./Logo";
 import { signOut } from "@/app/login/actions";
 
 type NavItem = { href: string; label: string; icon: string; badge?: number };
@@ -35,10 +36,7 @@ export function Shell(props: {
     <div className="app">
       <aside className={`side ${open ? "open" : ""}`}>
         <Link href="/" className="logo" style={{ color: "inherit" }}>
-          <div className="logo-mark">
-            <Icon name="pile" size={20} />
-          </div>
-          MasterPlan
+          <Logo />
         </Link>
         <nav className="nav">
           {props.nav.map((n) => (
