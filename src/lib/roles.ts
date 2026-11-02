@@ -3,7 +3,7 @@
 
 export type Role = "admin" | "planning" | "manager" | "accounting" | "drive_team" | "production";
 export const ROLES: Role[] = ["admin", "planning", "manager", "accounting", "drive_team", "production"];
-export type PageKey = "overview" | "projects" | "daily" | "import" | "finance" | "sales" | "drive" | "settings";
+export type PageKey = "overview" | "projects" | "daily" | "import" | "finance" | "sales" | "meeting" | "drive" | "settings";
 
 export const PAGES: Record<PageKey, { label: string; href: string; icon: string }> = {
   overview: { label: "ภาพรวม", href: "/overview", icon: "home" },
@@ -12,13 +12,14 @@ export const PAGES: Record<PageKey, { label: string; href: string; icon: string 
   import: { label: "นำเข้าไฟล์", href: "/import", icon: "up" },
   finance: { label: "มูลค่ายอดขาย / มูลค่างานคงเหลือ", href: "/finance", icon: "money" },
   sales: { label: "ยอดขาย & Runway", href: "/sales", icon: "trend" },
+  meeting: { label: "ประชุมแผนกขาย", href: "/meeting", icon: "users" },
   drive: { label: "ฝ่ายตอก", href: "/drive", icon: "crane" },
   settings: { label: "ตั้งค่า", href: "/settings", icon: "gear" },
 };
 
 // ตามตารางสิทธิ์ของผู้ใช้ (3 พ.ย. 2569): วางแผนแก้ไขได้ทุกหน้า, ฝ่ายอื่นดูได้ (หน้านำเข้าไฟล์ = ดูประวัติอย่างเดียว),
 // ตั้งค่าเฉพาะวางแผน/ผู้ดูแล, ฝ่ายตอก/ฝ่ายผลิตห้ามเห็นตัวเลขมูลค่าเงินทุกหน้า (ไม่มีหน้าการเงิน)
-const VIEW_ALL: PageKey[] = ["overview", "projects", "daily", "import", "finance", "sales", "drive"];
+const VIEW_ALL: PageKey[] = ["overview", "projects", "daily", "import", "finance", "sales", "meeting", "drive"];
 const VIEW_NO_MONEY: PageKey[] = ["overview", "projects", "daily", "import", "sales", "drive"];
 
 export const ROLE_CONFIG: Record<Role, { label: string; pages: PageKey[]; home: PageKey; canEdit: boolean }> = {

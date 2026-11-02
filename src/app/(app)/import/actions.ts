@@ -8,8 +8,11 @@ import { readSheets } from "@/lib/import/excel";
 import { parseQueue } from "@/lib/import/queue";
 import { parseMasterPlanning } from "@/lib/import/masterPlanning";
 import { parseSales } from "@/lib/import/sales";
+import { parseSalesMeeting } from "@/lib/import/salesMeeting";
+import { CATEGORY_LABEL, fM } from "@/lib/salesMeeting";
+import { fDate, todayBangkok } from "@/lib/format";
 
-export type Kind = "queue" | "master_planning" | "sales";
+export type Kind = "queue" | "master_planning" | "sales" | "sales_meeting";
 export type Preview = {
   ok: true; kind: Kind; fileName: string;
   stats: { label: string; value: number; tone?: "new" | "dup" | "err" | "warn" }[];
@@ -19,7 +22,7 @@ export type Preview = {
 } | { ok: false; error: string };
 export type CommitResult = { ok: true; message: string } | { ok: false; error: string };
 
-const KindSchema = z.enum(["queue", "master_planning", "sales"]);
+const KindSchema = z.enum(["queue", "master_planning", "sales", "sales_meeting"]);
 const MAX = 40 * 1024 * 1024;
 
 async function readFile(formData: FormData) {
@@ -92,6 +95,26 @@ export async function previewImport(kindRaw: string, formData: FormData): Promis
         note: `ข้อมูลโครงการ และแผนรายวันช่วง ${r.dateFrom} ถึง ${r.dateTo} ของโครงการในไฟล์จะถูกแทนที่ด้วยไฟล์นี้${r.hasActual ? "" : " · ไฟล์ไม่มีแถว Actual: ผลงานจริงยังใช้จากไฟล์คิว-วัน"} (หมายเหตุที่พิมพ์ในเว็บจะไม่ถูกทับ)`,
       };
     }
+    if (kind === "sales_meeting") {
+      const r = parseSalesMeeting(readSheets(buf), name, todayBangkok());
+      const { data: old } = await supabase.from("sales_meetings").select("id").eq("meeting_date", r.meeting.meeting_date).maybeSingle();
+      const cnt = (c: string) => r.pipeline.filter((x) => x.category === c).length;
+      return {
+        ok: true, kind, fileName: name,
+        stats: [
+          { label: "เซลล์", value: r.people.length, tone: "new" },
+          { label: "งาน Base", value: cnt("base") },
+          { label: "งาน Best", value: cnt("best") },
+          { label: "ไม่ได้งาน", value: cnt("lost"), tone: "warn" },
+        ],
+        sample: r.pipeline.filter((x) => x.category === "base" || x.category === "best").map((x) => ({
+          เซลล์: x.salesperson, ผลิตภัณฑ์: x.product, ลูกค้า: x.customer, โครงการ: x.project, "มูลค่า (ล้าน)": fM(x.value),
+          ประเภท: CATEGORY_LABEL[x.category], เดือน: x.expected_text, สถานะ: x.status_note,
+        })),
+        errors: r.warnings.slice(0, 50),
+        note: `ประชุมวันที่ ${fDate(r.meeting.meeting_date)} · ${r.meeting.title || "สรุปยอดขาย"}${old ? " — มีข้อมูลประชุมวันนี้แล้ว จะถูกแทนที่ด้วยไฟล์นี้" : ""}`,
+      };
+    }
     const r = parseSales(readSheets(buf, ["dataรวม"]));
     const count = (t: string) => r.docs.filter((d) => d.doc_type === t).length;
     return {
@@ -131,6 +154,13 @@ export async function commitImport(kindRaw: string, formData: FormData): Promise
       });
       if (error) throw new Error(error.message);
       message = `อัพเดท ${data.projects} โครงการ · แผน ${Number(data.plans).toLocaleString("th-TH")} วัน · หมายเหตุใหม่ ${data.notes}`;
+    } else if (kind === "sales_meeting") {
+      const r = parseSalesMeeting(readSheets(buf), name, todayBangkok());
+      const { data, error } = await supabase.rpc("import_sales_meeting", {
+        p_file_name: name, p_meeting: r.meeting, p_people: r.people, p_products: r.products, p_pipeline: r.pipeline,
+      });
+      if (error) throw new Error(error.message);
+      message = `บันทึกประชุมวันที่ ${fDate(r.meeting.meeting_date)} · เซลล์ ${data.people} คน · รายการงาน ${data.pipeline} รายการ${data.replaced ? " (แทนที่ของเดิม)" : ""}`;
     } else {
       const r = parseSales(readSheets(buf, ["dataรวม"]));
       const { data, error } = await supabase.rpc("import_sales", {

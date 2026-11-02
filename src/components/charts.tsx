@@ -109,3 +109,23 @@ export function HBar({ data, money }: { data: { name: string; value: number }[];
     </ResponsiveContainer>
   );
 }
+
+/** ยอดขายจริงรายเดือนเทียบเป้า + ประมาณการ Base / Best (ล้านบาท) — หน้าประชุมแผนกขาย */
+export type SalesTargetPoint = { label: string; actual: number | null; base: number | null; best: number | null; target: number | null };
+export function SalesTarget({ data }: { data: SalesTargetPoint[] }) {
+  const m = (v: unknown) => (v == null ? "–" : `${fNum(Number(v), 2)} ล้าน`);
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <ComposedChart data={data} margin={{ top: 8, right: 4, left: -16, bottom: 0 }}>
+        {grid}
+        <XAxis dataKey="label" {...axis} />
+        <YAxis {...axis} axisLine={false} tickFormatter={(v) => fNum(v)} />
+        <Tooltip {...tip} formatter={(v, n) => [m(v), n]} />
+        <Bar dataKey="actual" name="ยอดขายจริง" stackId="a" fill="var(--s1)" maxBarSize={26} />
+        <Bar dataKey="base" name="ประมาณการ Base" stackId="a" fill="var(--s1)" fillOpacity={0.45} maxBarSize={26} />
+        <Bar dataKey="best" name="เพิ่มถ้าได้ Best" stackId="a" fill="var(--s1)" fillOpacity={0.18} stroke="var(--s1)" strokeDasharray="3 3" radius={[3, 3, 0, 0]} maxBarSize={26} />
+        <Line type="monotone" dataKey="target" name="เป้า" stroke="var(--warn)" strokeWidth={2} dot={{ r: 2.5 }} />
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}

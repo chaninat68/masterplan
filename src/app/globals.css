@@ -461,3 +461,24 @@ table.ptbl{border-collapse:separate;border-spacing:0;font-variant-numeric:tabula
 .logo-text{display:flex;flex-direction:column;line-height:1.02;letter-spacing:.06em;color:var(--ink)}
 .logo-text b{font-size:16px;font-weight:700}
 .logo-text span{font-size:13.5px;font-weight:400;letter-spacing:.09em}
+/* ประชุมแผนกขาย */
+.chip-select{all:unset;cursor:pointer;font-weight:600;color:var(--ink);padding-right:4px}
+.mtbl th.grp{text-align:center;border-bottom:1px solid var(--line);color:var(--ink-2);font-weight:600}
+.mtbl th .th-sub{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.mtbl td.best,.mtbl th.best{background:color-mix(in srgb,var(--s1) 5%,transparent)}
+.mtbl tr.total td{font-weight:700;border-top:2px solid var(--line-2);background:var(--surface-2)}
+.mtbl td,.mtbl th{padding-left:8px;padding-right:8px}
+table tr.total td{font-weight:700;border-top:2px solid var(--line-2)}
+.prog.sm{min-width:110px}
+.prog.sm .bar{height:6px}
+.cat{display:inline-block;border-radius:7px;padding:2px 8px;font-size:12px;font-weight:600;white-space:nowrap}
+.cat-base{background:var(--good-soft);color:var(--good-ink)}
+.cat-best{background:var(--i-blue);color:var(--s1)}
+.cat-lost{background:var(--bad-soft);color:var(--bad-ink)}
+.cat-excluded,.cat-cancelled,.cat-none{background:var(--surface-3);color:var(--ink-2)}
+.add-item{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%;padding:12px;border:1px dashed var(--line-2);border-radius:12px;background:var(--surface-2)}
+.add-item .input{padding:6px 10px;font-size:13px}
+.add-item .err{color:var(--bad-ink);font-size:12.5px}
+.icon-btn.sm{width:30px;height:30px;border-radius:8px}
+.minis.m5{grid-template-columns:repeat(5,1fr)}
+@media (max-width:760px){.minis.m5{grid-template-columns:repeat(2,1fr)}}

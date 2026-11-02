@@ -9,6 +9,7 @@ const KINDS: { kind: Kind; title: string; desc: string }[] = [
   { kind: "queue", title: "รายงานคิว-วัน (ทุกวัน)", desc: "ไฟล์สะสมทั้งปีจากทีมตอก — เพิ่มเฉพาะแถวใหม่ แถวที่มีแล้วข้ามให้อัตโนมัติ" },
   { kind: "master_planning", title: "Master Planning", desc: "แท็บ Pile — ข้อมูลโครงการ + แผนรายวัน (ใช้ตอนเริ่มระบบ หรือเมื่ออัพเดทแผนใน Excel)" },
   { kind: "sales", title: "ข้อมูล SO และใบเปลี่ยนแปลง", desc: "แท็บ dataรวม — เอกสารขาย P / R / C และลูกค้า" },
+  { kind: "sales_meeting", title: "ประชุมแผนกขาย (Sales Update)", desc: "ไฟล์ Sales Update dd-mm-yy.xlsx ทุกสัปดาห์ — ยอดขายรายสัปดาห์ เป้า และงาน Base / Best (วันที่ประชุมซ้ำ = แทนที่ของเดิม)" },
 ];
 
 export function ImportPanel() {
