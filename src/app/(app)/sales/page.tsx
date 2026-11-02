@@ -11,7 +11,7 @@ import { setSetting } from "../projects/actions";
 
 export const metadata: Metadata = { title: "ยอดขาย & Runway" };
 
-type Doc = { project_code: string; doc_type: string; doc_date: string; customer_name: string; customer_code: string | null; amount: number; approval_status: string; salesperson: string; is_new_customer: boolean };
+type Doc = { project_code: string; doc_type: string; doc_date: string; customer_name: string; customer_code: string | null; amount: number; salesperson: string; is_new_customer: boolean };
 
 export default async function SalesPage(props: PageProps<"/sales">) {
   const user = await requirePage("sales");
@@ -21,7 +21,7 @@ export default async function SalesPage(props: PageProps<"/sales">) {
   const bl = await getBacklog(supabase, pick);
   const year = bl.asof.slice(0, 4);
   const [docs, { count: onHand }] = await Promise.all([
-    !money ? Promise.resolve([] as Doc[]) : fetchAll<Doc>((a, b) => supabase.from("sales_docs").select("project_code, doc_type, doc_date, customer_name, customer_code, amount, approval_status, salesperson, is_new_customer").gte("doc_date", `${year}-01-01`).lte("doc_date", bl.asof).order("id").range(a, b)),
+    !money ? Promise.resolve([] as Doc[]) : fetchAll<Doc>((a, b) => supabase.from("sales_docs").select("project_code, doc_type, doc_date, customer_name, customer_code, amount, salesperson, is_new_customer").gte("doc_date", `${year}-01-01`).lte("doc_date", bl.asof).order("id").range(a, b)),
     supabase.from("projects").select("code", { count: "exact", head: true }).eq("status", "on_hand"),
   ]);
   const w = bl.runway_weeks;
@@ -32,14 +32,17 @@ export default async function SalesPage(props: PageProps<"/sales">) {
   const forecast = Array.from({ length: W + 1 }, (_, k) => ({ label: k === 0 ? "ตอนนี้" : fDateShort(addDays(bl.asof, k * 7)), remain: Math.max(0, Math.round(bl.backlog_qty - bl.rate_per_week * k)) }));
   const warnIdx = w != null ? Math.max(0, Math.round(w - bl.threshold_weeks)) : -1;
 
-  const pend = new Map<string, { code: string; cust: string; amt: number; d: string; sales: string }>();
-  for (const x of docs.filter((x) => x.approval_status === "รออนุมัติ" && x.doc_type === "P")) {
-    const o = pend.get(x.project_code) ?? { code: x.project_code, cust: x.customer_name, amt: 0, d: x.doc_date, sales: x.salesperson };
+  // SO เปิดขาย (P) ล่าสุดต่อโครงการ — ไฟล์ SO ที่นำเข้าถือว่าอนุมัติทั้งหมด
+  const opened = new Map<string, { code: string; cust: string; amt: number; d: string; sales: string }>();
+  for (const x of docs.filter((x) => x.doc_type === "P")) {
+    const o = opened.get(x.project_code) ?? { code: x.project_code, cust: x.customer_name, amt: 0, d: x.doc_date, sales: x.salesperson };
     o.amt += Number(x.amount);
     if (x.doc_date > o.d) o.d = x.doc_date;
-    pend.set(x.project_code, o);
+    opened.set(x.project_code, o);
   }
-  const pendList = [...pend.values()].sort((a, b) => b.d.localeCompare(a.d));
+  const openList = [...opened.values()].sort((a, b) => b.d.localeCompare(a.d));
+  const ym = bl.asof.slice(0, 7);
+  const openMonth = openList.filter((o) => o.d.startsWith(ym));
   const newC = new Set(docs.filter((x) => x.is_new_customer).map((x) => x.customer_code ?? x.customer_name));
   const oldC = new Set(docs.filter((x) => !x.is_new_customer).map((x) => x.customer_code ?? x.customer_name));
   const bySeller = new Map<string, number>();
@@ -74,7 +77,7 @@ export default async function SalesPage(props: PageProps<"/sales">) {
       </div>
       {money ? (<>
       <div className="grid g3 mb">
-        <Kpi tone="amber" icon="doc" label="SO รออนุมัติ" value={pendList.length} unit="โครงการ" cmp={<div className="cmp">{fBaht(pendList.reduce((s, x) => s + x.amt, 0))}</div>} />
+        <Kpi tone="amber" icon="doc" label="SO เปิดใหม่เดือนนี้" value={openMonth.length} unit="โครงการ" cmp={<div className="cmp">{fBaht(openMonth.reduce((s, x) => s + x.amt, 0))}</div>} />
         <Kpi tone="blue" icon="cal" label="รอเริ่มตอก (On Hand)" value={onHand ?? 0} unit="โครงการ" cmp={<div className="cmp">{fNum(bl.on_hand_qty)} ต้น</div>} />
         <Kpi tone="green" icon="users" label={`ลูกค้าปี ${Number(year) + 543}`} value={newC.size} unit="รายใหม่" cmp={<div className="cmp">ลูกค้าเก่า {oldC.size} ราย</div>} />
       </div>
@@ -84,11 +87,11 @@ export default async function SalesPage(props: PageProps<"/sales">) {
           <div className="chart-box">{sellers.length ? <HBar data={sellers} money /> : <Empty>ยังไม่มีข้อมูลขาย</Empty>}</div>
         </div>
         <div className="card">
-          <CardHead title="SO รออนุมัติล่าสุด" sub="งานที่กำลังจะเข้ามาเติม Runway" />
+          <CardHead title="SO เปิดใหม่ล่าสุด" sub="ใบเปิดขาย (P) ล่าสุดต่อโครงการ · มูลค่ารวม P ของโครงการ" />
           <div className="tbl-wrap" style={{ maxHeight: 300, overflow: "auto" }}>
             <table>
               <thead><tr><th>โครงการ</th><th>เซลล์</th><th>วันที่</th><th className="num">มูลค่า</th></tr></thead>
-              <tbody>{pendList.slice(0, 50).map((o) => <tr key={o.code}><td><span className="code">{o.code}</span><span className="cell-sub">{o.cust}</span></td><td>{o.sales}</td><td className="nowrap">{fDate(o.d)}</td><td className="num">{fBaht(o.amt)}</td></tr>)}</tbody>
+              <tbody>{openList.slice(0, 50).map((o) => <tr key={o.code}><td><span className="code">{o.code}</span><span className="cell-sub">{o.cust}</span></td><td>{o.sales}</td><td className="nowrap">{fDate(o.d)}</td><td className="num">{fBaht(o.amt)}</td></tr>)}</tbody>
             </table>
           </div>
         </div>

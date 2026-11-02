@@ -12,7 +12,7 @@ import { CopyTextButton } from "@/components/CopyText";
 import { SalesMonthly } from "@/components/charts";
 import { updateProject } from "../projects/actions";
 
-export const metadata: Metadata = { title: "การเงิน / วางบิล" };
+export const metadata: Metadata = { title: "มูลค่ายอดขาย / มูลค่างานคงเหลือ" };
 
 export default async function FinancePage(props: PageProps<"/finance">) {
   const user = await requirePage("finance");
@@ -42,7 +42,7 @@ export default async function FinancePage(props: PageProps<"/finance">) {
 
   return (
     <>
-      <PageHeader title="การเงิน / วางบิล" sub="มูลค่าผลงานตามรอบวางบิล และยอดขายสุทธิ (P − R − C) สำหรับฝ่ายบัญชี" asof={asof} latest={latest} readOnly={!user.canEdit}
+      <PageHeader title="มูลค่ายอดขาย / มูลค่างานคงเหลือ" sub="มูลค่าผลงานตามรอบวางบิล และยอดขายสุทธิ (P − R − C) สำหรับฝ่ายบัญชี" asof={asof} latest={latest} readOnly={!user.canEdit}
         right={<><a className="btn ghost" href={`/api/export/billing${pick ? `?asof=${pick}` : ""}`}><Icon name="dl" />Export รายงานวางบิล</a><CopyTextButton title="คัดลอกไป Excel" text={tsv} /></>} />
       <div className="grid g4 mb">
         <Kpi tone="blue" icon="money" label={`มูลค่าผลงานเดือน ${fMonth(month)}`} value={fBaht(mV)} cmp={<div className="cmp">{fNum(mQ)} ต้น · {rows.filter((r) => r.monthQty).length} โครงการ</div>} />

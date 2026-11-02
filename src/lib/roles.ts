@@ -10,7 +10,7 @@ export const PAGES: Record<PageKey, { label: string; href: string; icon: string 
   projects: { label: "แผน / ผลงาน", href: "/projects", icon: "plan" },
   daily: { label: "รายงานประจำวัน", href: "/daily", icon: "day" },
   import: { label: "นำเข้าไฟล์", href: "/import", icon: "up" },
-  finance: { label: "การเงิน / วางบิล", href: "/finance", icon: "money" },
+  finance: { label: "มูลค่ายอดขาย / มูลค่างานคงเหลือ", href: "/finance", icon: "money" },
   sales: { label: "ยอดขาย & Runway", href: "/sales", icon: "trend" },
   drive: { label: "ฝ่ายตอก", href: "/drive", icon: "crane" },
   settings: { label: "ตั้งค่า", href: "/settings", icon: "gear" },

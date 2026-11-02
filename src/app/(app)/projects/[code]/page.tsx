@@ -16,7 +16,7 @@ export async function generateMetadata(props: PageProps<"/projects/[code]">): Pr
   return { title: (await props.params).code };
 }
 
-type SoDoc = { doc_type: string; doc_date: string; group_product: string; item_kind: string; qty: number; amount: number; approval_status: string };
+type SoDoc = { doc_type: string; doc_date: string; group_product: string; item_kind: string; qty: number; amount: number };
 
 export default async function ProjectPage(props: PageProps<"/projects/[code]">) {
   const user = await requirePage("projects");
@@ -38,7 +38,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
     fetchAll<DayLog>((a, b) => supabase.from("drive_logs").select("id, work_date, rig_name, rig_type, size_code, length_m, shift, qty, leader, company_raw, source").eq("project_code", code).gt("qty", 0).lte("work_date", asof).order("work_date").range(a, b)),
     supabase.from("daily_notes").select("project_code, note_date, body").or(`project_code.eq.${code},project_code.is.null`).limit(1000),
     showSales
-      ? fetchAll<SoDoc>((a, b) => supabase.from("sales_docs").select("doc_type, doc_date, group_product, item_kind, qty, amount, approval_status").eq("project_code", code).order("doc_date").range(a, b))
+      ? fetchAll<SoDoc>((a, b) => supabase.from("sales_docs").select("doc_type, doc_date, group_product, item_kind, qty, amount").eq("project_code", code).order("doc_date").range(a, b))
       : Promise.resolve([] as SoDoc[]),
     supabase.from("drive_logs").select("agency").eq("project_code", code).neq("agency", "").order("work_date", { ascending: false }).limit(1).maybeSingle(),
   ]);
@@ -149,13 +149,13 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
           <CardHead title="ใบ P − R − C" sub={`${so.length} รายการ · ใช้ตรวจเทียบกับ Master Planning`} right={<div>จำนวนสุทธิ <b>{fNum(soQty)} ต้น</b> · มูลค่าสุทธิ <b>{fBaht2(soAmt)}</b></div>} />
           <div className="tbl-wrap">
             <table>
-              <thead><tr><th>วันที่</th><th>ประเภท</th><th>รายการ</th><th className="num">จำนวน</th><th className="num">มูลค่า</th><th>สถานะ</th></tr></thead>
+              <thead><tr><th>วันที่</th><th>ประเภท</th><th>รายการ</th><th className="num">จำนวน</th><th className="num">มูลค่า</th></tr></thead>
               <tbody>{so.map((s, i) => (
                 <tr key={i}>
                   <td className="nowrap">{fDate(s.doc_date)}</td>
                   <td>{s.doc_type === "P" ? <span className="dc g">P เปิดขาย</span> : <span className="dc r">{s.doc_type} ลด/เปลี่ยน</span>}</td>
                   <td>{s.item_kind === "บริการ" || s.group_product === "Service" ? <span className="muted">(บริการ ไม่นับต้น) </span> : null}{s.group_product}</td>
-                  <td className="num">{fNum(s.qty)}</td><td className="num">{fBaht2(s.amount)}</td><td className="muted">{s.approval_status}</td>
+                  <td className="num">{fNum(s.qty)}</td><td className="num">{fBaht2(s.amount)}</td>
                 </tr>
               ))}</tbody>
             </table>

@@ -38,9 +38,9 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
     supabase.from("daily_notes").select("project_code, note_date, body, source").neq("body", "ไม่มีการตอก").gte("note_date", addDays(asof, -60)).lte("note_date", asof).order("note_date", { ascending: false }).limit(5),
     supabase.from("import_batches").select("file_name, rows_added, created_at, undone_at").order("created_at", { ascending: false }).limit(3),
     money
-      ? fetchAll<{ project_code: string; doc_type: string; doc_date: string; approval_status: string }>((a, b) =>
-          supabase.from("sales_docs").select("project_code, doc_type, doc_date, approval_status").or(`doc_date.gte.${ym}-01,approval_status.eq.รออนุมัติ`).order("id").range(a, b))
-      : Promise.resolve([] as { project_code: string; doc_type: string; doc_date: string; approval_status: string }[]),
+      ? fetchAll<{ project_code: string; doc_type: string; doc_date: string }>((a, b) =>
+          supabase.from("sales_docs").select("project_code, doc_type, doc_date").gte("doc_date", `${ym}-01`).lte("doc_date", asof).order("id").range(a, b))
+      : Promise.resolve([] as { project_code: string; doc_type: string; doc_date: string }[]),
   ]);
 
   const byCode = new Map(projects.map((p) => [p.code, p]));
@@ -63,7 +63,6 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
   const flowVal = flowP.reduce((s, p) => s + p.contract_value, 0);
   const sales = salesRes;
   const soNew = new Set(sales.filter((s) => s.doc_type === "P" && s.doc_date >= ym + "-01").map((s) => s.project_code)).size;
-  const pend = new Set(sales.filter((s) => s.approval_status === "รออนุมัติ").map((s) => s.project_code)).size;
   const billDue = new Set(mL.filter((l) => byCode.get(l.project_code)?.status === "ongoing").map((l) => l.project_code)).size;
   const statusCount = (s: string) => projects.filter((p) => p.status === s).length;
 
@@ -206,7 +205,7 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
             <div className="legend" style={{ justifyContent: "space-between" }}><span><i style={{ background: "var(--s1)" }} />ตอกแล้ว {fNum(flowOrd ? (flowDone / flowOrd) * 100 : 0)}% ของยอดสั่งซื้อ</span><span>คงเหลือ {fNum(flowOrd - flowDone)} ต้น</span></div>
             <div className="stack"><i style={{ width: `${flowOrd ? ((flowDone / flowOrd) * 100).toFixed(1) : 0}%`, background: "var(--s1)" }} /></div>
             {money && (
-              <div className="minis"><div><b>{fNum(soNew)}</b>SO เปิดใหม่เดือนนี้</div><div><b>{fNum(pend)}</b>SO รออนุมัติ</div><div><b>{statusCount("on_hand")}</b>โครงการรอเริ่มตอก</div></div>
+              <div className="minis"><div><b>{fNum(soNew)}</b>SO เปิดใหม่เดือนนี้</div><div><b>{statusCount("on_hand")}</b>โครงการรอเริ่มตอก</div></div>
             )}
           </div>
         </div>
