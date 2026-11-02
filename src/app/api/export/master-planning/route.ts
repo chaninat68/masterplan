@@ -1,6 +1,8 @@
 import { createClient, fetchAll } from "@/lib/supabase/server";
 import { getAsof, getProjects } from "@/lib/data";
 import { dayRange, fDate } from "@/lib/format";
+import { getCurrentUser } from "@/lib/auth";
+import { canSeeSales } from "@/lib/roles";
 import { canExport, forbidden, xlsxResponse } from "@/lib/xlsxResponse";
 
 const STATUS_X: Record<string, string> = { ongoing: "1-Ongoing", on_hand: "2-On Hand", hold: "3-Hold", completed: "5-Completed", cancelled: "6-ยกเลิก" };
@@ -8,6 +10,7 @@ const STATUS_X: Record<string, string> = { ongoing: "1-Ongoing", on_hand: "2-On 
 /** Export กลับเป็นรูปแบบแท็บ Pile เดิม (คอลัมน์ A–Q + แถว Plan/Actual รายวัน) สำหรับโครงการที่ยังไม่จบ */
 export async function GET() {
   if (!(await canExport("projects"))) return forbidden();
+  const money = canSeeSales((await getCurrentUser())!.role); // ฝ่ายตอก/ฝ่ายผลิต: คอลัมน์มูลค่าว่าง
   const supabase = await createClient();
   const [asof, all] = await Promise.all([getAsof(supabase), getProjects(supabase, { status: ["ongoing", "on_hand", "hold"] })]);
   const codes = all.map((p) => p.code);
@@ -28,7 +31,7 @@ export async function GET() {
   ]];
   for (const p of all) {
     const r3 = (n: number) => Math.round(n * 1000) / 1000;
-    aoa.push([p.code, p.pm, p.sales, STATUS_X[p.status], p.customer_name, p.project_name, p.order_qty, p.contract_value, p.value_per_pile, r3(p.done_qty),
+    aoa.push([p.code, p.pm, p.sales, STATUS_X[p.status], p.customer_name, p.project_name, p.order_qty, money ? p.contract_value : null, money ? p.value_per_pile : null, r3(p.done_qty),
       r3(p.remain_qty), p.order_qty ? r3(p.remain_qty / p.order_qty) : 0, p.order_qty, r3(p.ahead_behind), p.start_date, p.end_date, "Plan",
       ...days.map((d) => P.get(`${p.code}|${d}`) ?? null)]);
     aoa.push([p.code, "", "", STATUS_X[p.status], p.billing_cycle, "", null, null, null, null, null, null, null, p.ahead_behind >= 0 ? "Ahead" : "Behind",

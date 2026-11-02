@@ -20,8 +20,9 @@ export default async function ImportPage() {
   ]);
   return (
     <>
-      <PageHeader title="นำเข้าไฟล์" sub="ลากไฟล์ที่ได้รับมาวาง ตรวจตัวอย่าง แล้วกดยืนยัน — ทุกหน้าอัพเดททันที" asof={asof} readOnly={!user.canEdit} />
-      <div className="grid g64 mb">
+      <PageHeader title="นำเข้าไฟล์" sub={user.canEdit ? "ลากไฟล์ที่ได้รับมาวาง ตรวจตัวอย่าง แล้วกดยืนยัน — ทุกหน้าอัพเดททันที" : "ประวัติการนำเข้าข้อมูลของฝ่ายวางแผน — ข้อมูลในเว็บอัพเดทถึงไฟล์ล่าสุดที่นำเข้า"} asof={asof} readOnly={!user.canEdit} />
+      {/* ฝ่ายอื่น: ดูประวัติอย่างเดียว (อัปโหลด/ยืนยัน/ย้อนกลับ = ฝ่ายวางแผน) */}
+      {user.canEdit && <div className="grid g64 mb">
         <ImportPanel />
         <div className="card">
           <CardHead title="ขั้นตอนประจำวัน" sub="ฝ่าย Planning นำเข้าเองทุกวัน · ไฟล์คิว-วันคือผลงานจริง" />
@@ -34,7 +35,7 @@ export default async function ImportPage() {
             เริ่มระบบครั้งแรก: นำเข้า <b>Master Planning</b> → <b>คิว-วัน</b> → <b>SO</b> ตามลำดับ
           </p>
         </div>
-      </div>
+      </div>}
       <div className="card">
         <CardHead title="ประวัติการนำเข้า" sub="30 รายการล่าสุด" />
         {batches?.length ? (
@@ -51,7 +52,7 @@ export default async function ImportPage() {
                     <td className="num">{b.rows_duplicate.toLocaleString("th-TH")}</td>
                     <td className="num tag-err">{b.rows_error}</td>
                     <td>{b.undone_at ? <span className="dc n">ย้อนกลับแล้ว</span> : <span className="dc g">สำเร็จ</span>}</td>
-                    <td>{!b.undone_at && b.kind === "queue" && <UndoButton id={b.id} />}</td>
+                    <td>{user.canEdit && !b.undone_at && b.kind === "queue" && <UndoButton id={b.id} />}</td>
                   </tr>
                 ))}
               </tbody>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireRole } from "@/lib/auth";
+import { ROLES, type Role } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -13,8 +14,8 @@ export async function updateUser(id: string, field: "role" | "active" | "full_na
     const me = await requireRole(["admin"]);
     const uid = z.uuid().parse(id);
     const supabase = await createClient();
-    let patch: { role?: "admin" | "planning" | "manager" | "accounting" | "drive_team"; active?: boolean; full_name?: string };
-    if (field === "role") patch = { role: z.enum(["admin", "planning", "manager", "accounting", "drive_team"]).parse(value) };
+    let patch: { role?: Role; active?: boolean; full_name?: string };
+    if (field === "role") patch = { role: z.enum(ROLES as [Role, ...Role[]]).parse(value) };
     else if (field === "active") patch = { active: value === "true" };
     else patch = { full_name: z.string().trim().max(100).parse(value) };
     // กันแอดมินลดสิทธิ์/ปิดตัวเองจนไม่มีแอดมินเหลือ

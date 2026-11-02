@@ -20,6 +20,7 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
   const sp = await props.searchParams;
   const range = sp.range === "90" ? 90 : 30;
   const supabase = await createClient();
+  const money = canSeeSales(user.role); // ฝ่ายตอก/ฝ่ายผลิต: ไม่แสดงตัวเลขมูลค่าเงิน
   // ?asof= ดูย้อนหลัง ณ วันที่เลือก (ไม่เกินวันที่ข้อมูลล่าสุด)
   const { latest, asof, pick } = await resolveAsof(supabase, sp.asof);
   const [bl, projects] = await Promise.all([getBacklog(supabase, pick), getProjects(supabase, { asof: pick })]);
@@ -36,7 +37,7 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
     fetchAll<{ work_date: string; company_category: string; qty: number }>((a, b) => supabase.from("v_daily_company").select("work_date, company_category, qty").gte("work_date", fromChart).lte("work_date", asof).range(a, b)),
     supabase.from("daily_notes").select("project_code, note_date, body, source").neq("body", "ไม่มีการตอก").gte("note_date", addDays(asof, -60)).lte("note_date", asof).order("note_date", { ascending: false }).limit(5),
     supabase.from("import_batches").select("file_name, rows_added, created_at, undone_at").order("created_at", { ascending: false }).limit(3),
-    canSeeSales(user.role)
+    money
       ? fetchAll<{ project_code: string; doc_type: string; doc_date: string; approval_status: string }>((a, b) =>
           supabase.from("sales_docs").select("project_code, doc_type, doc_date, approval_status").or(`doc_date.gte.${ym}-01,approval_status.eq.รออนุมัติ`).order("id").range(a, b))
       : Promise.resolve([] as { project_code: string; doc_type: string; doc_date: string; approval_status: string }[]),
@@ -99,7 +100,7 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
     "",
     ...[...byP.entries()].sort((a, b) => b[1] - a[1]).map(([c, q]) => `• ${c} ${byCode.get(c)?.project_name ?? ""}: ${fNum(q)} ต้น`),
     "",
-    `เดือนนี้ ${fNum(mQ)} ต้น · มูลค่า ${fBaht(mV)}`,
+    `เดือนนี้ ${fNum(mQ)} ต้น${money ? ` · มูลค่า ${fBaht(mV)}` : ""}`,
     `โครงการช้ากว่าแผน ${behind.length} โครงการ · Runway ${runwayTxt} สัปดาห์`,
   ].join("\n");
 
@@ -113,7 +114,9 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
       <div className="grid g4 mb">
         <Kpi tone="blue" icon="pile" label={`ตอกวันล่าสุด · ${fDateShort(asof)}`} value={fNum(dayQty(asof))} unit="ต้น" cmp={<Delta cur={dayQty(asof)} prev={dayQty(prevDay)} label={`เทียบ ${fDateShort(prevDay)}`} />} />
         <Kpi tone="green" icon="day" label="ตอกเดือนนี้" value={fNum(mQ)} unit="ต้น" cmp={<Delta cur={mQ} prev={pmQ} label="เทียบช่วงเดียวกันเดือนก่อน" />} />
-        <Kpi tone="amber" icon="money" label="มูลค่าผลงานเดือนนี้" value={fBaht(mV)} cmp={<Delta cur={mV} prev={pmV} label="เทียบช่วงเดียวกันเดือนก่อน" />} />
+        {money
+          ? <Kpi tone="amber" icon="money" label="มูลค่าผลงานเดือนนี้" value={fBaht(mV)} cmp={<Delta cur={mV} prev={pmV} label="เทียบช่วงเดียวกันเดือนก่อน" />} />
+          : <Kpi tone="amber" icon="alert" label="โครงการช้ากว่าแผน" value={behind.length} unit="โครงการ" cmp={<div className="cmp">จากที่กำลังตอก {ongoing.length} โครงการ</div>} />}
         <Kpi tone={lvl} icon="alert" label="งานในมือพอทำอีก" value={runwayTxt} unit="สัปดาห์"
           cmp={<div className="cmp"><span className={bl.level === "green" ? "up" : "down"}>{bl.level === "red" ? "ต้องเร่งหายอดขาย" : bl.level === "amber" ? "เฝ้าระวัง" : "ปกติ"}</span> · เกณฑ์ {fNum(bl.threshold_weeks)} สัปดาห์</div>} />
       </div>
@@ -147,7 +150,7 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
 
       <div className="grid g3 mb">
         <div className="card">
-          <CardHead title="งานในมือ" sub={`คงเหลือ ${fNum(bl.backlog_qty)} ต้น · ${fBaht(bl.backlog_value)}`} href="/sales" linkLabel="ดูเพิ่ม" />
+          <CardHead title="งานในมือ" sub={`คงเหลือ ${fNum(bl.backlog_qty)} ต้น${money ? ` · ${fBaht(bl.backlog_value)}` : ""}`} href="/sales" linkLabel="ดูเพิ่ม" />
           <div className="donut-wrap sm">
             <div className="donut-box">
               <Donut unit="ต้น" data={[{ name: "กำลังตอก", value: bl.ongoing_qty, color: "var(--s1)" }, { name: "รอเริ่ม", value: bl.on_hand_qty, color: "var(--s2)" }, { name: "ชะลอโครงการ", value: bl.hold_qty, color: "var(--line-2)" }]} />
@@ -195,14 +198,14 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
         <div className="card span7">
           <CardHead title="เส้นทางงาน" sub="หน่วยต้น · โครงการกำลังตอก + รอเริ่ม" href="/sales" linkLabel="รายละเอียด" />
           <div className="flow">
-            <div className="step"><div className="ic" style={{ background: "var(--i-green)", color: "var(--good-ink)" }}><Icon name="doc" /></div><span>ยอดสั่งซื้อสุทธิ</span><b>{fNum(flowOrd)}</b><small>{fBaht(flowVal)}</small></div><div className="arr">→</div>
+            <div className="step"><div className="ic" style={{ background: "var(--i-green)", color: "var(--good-ink)" }}><Icon name="doc" /></div><span>ยอดสั่งซื้อสุทธิ</span><b>{fNum(flowOrd)}</b><small>{money ? fBaht(flowVal) : "ต้น"}</small></div><div className="arr">→</div>
             <div className="step"><div className="ic" style={{ background: "var(--i-blue)", color: "var(--s1)" }}><Icon name="crane" /></div><span>ตอกแล้ว</span><b>{fNum(flowDone)}</b><small>คงเหลือ {fNum(flowOrd - flowDone)} ต้น</small></div><div className="arr">→</div>
-            <div className="step"><div className="ic" style={{ background: "var(--i-amber)", color: "var(--warn-ink)" }}><Icon name="check" /></div><span>ส่งมอบเดือนนี้</span><b>{fNum(mQ)}</b><small>{billDue} โครงการ · {fBaht(mV)}</small></div>
+            <div className="step"><div className="ic" style={{ background: "var(--i-amber)", color: "var(--warn-ink)" }}><Icon name="check" /></div><span>ส่งมอบเดือนนี้</span><b>{fNum(mQ)}</b><small>{billDue} โครงการ{money ? ` · ${fBaht(mV)}` : ""}</small></div>
           </div>
           <div className="flow-sum">
             <div className="legend" style={{ justifyContent: "space-between" }}><span><i style={{ background: "var(--s1)" }} />ตอกแล้ว {fNum(flowOrd ? (flowDone / flowOrd) * 100 : 0)}% ของยอดสั่งซื้อ</span><span>คงเหลือ {fNum(flowOrd - flowDone)} ต้น</span></div>
             <div className="stack"><i style={{ width: `${flowOrd ? ((flowDone / flowOrd) * 100).toFixed(1) : 0}%`, background: "var(--s1)" }} /></div>
-            {canSeeSales(user.role) && (
+            {money && (
               <div className="minis"><div><b>{fNum(soNew)}</b>SO เปิดใหม่เดือนนี้</div><div><b>{fNum(pend)}</b>SO รออนุมัติ</div><div><b>{statusCount("on_hand")}</b>โครงการรอเริ่มตอก</div></div>
             )}
           </div>

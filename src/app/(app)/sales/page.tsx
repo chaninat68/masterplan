@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requirePage } from "@/lib/auth";
 import { createClient, fetchAll } from "@/lib/supabase/server";
 import { getBacklog, resolveAsof } from "@/lib/data";
+import { canSeeSales } from "@/lib/roles";
 import { addDays, fBaht, fDate, fDateShort, fNum } from "@/lib/format";
 import { CardHead, Empty, Kpi, PageHeader } from "@/components/ui";
 import { InlineEdit } from "@/components/InlineEdit";
@@ -15,11 +16,12 @@ type Doc = { project_code: string; doc_type: string; doc_date: string; customer_
 export default async function SalesPage(props: PageProps<"/sales">) {
   const user = await requirePage("sales");
   const supabase = await createClient();
+  const money = canSeeSales(user.role); // ฝ่ายตอก/ฝ่ายผลิต: เห็นเฉพาะจำนวนต้น/สัปดาห์ ไม่มีข้อมูลขาย/มูลค่า
   const { latest, pick } = await resolveAsof(supabase, (await props.searchParams).asof);
   const bl = await getBacklog(supabase, pick);
   const year = bl.asof.slice(0, 4);
   const [docs, { count: onHand }] = await Promise.all([
-    fetchAll<Doc>((a, b) => supabase.from("sales_docs").select("project_code, doc_type, doc_date, customer_name, customer_code, amount, approval_status, salesperson, is_new_customer").gte("doc_date", `${year}-01-01`).lte("doc_date", bl.asof).order("id").range(a, b)),
+    !money ? Promise.resolve([] as Doc[]) : fetchAll<Doc>((a, b) => supabase.from("sales_docs").select("project_code, doc_type, doc_date, customer_name, customer_code, amount, approval_status, salesperson, is_new_customer").gte("doc_date", `${year}-01-01`).lte("doc_date", bl.asof).order("id").range(a, b)),
     supabase.from("projects").select("code", { count: "exact", head: true }).eq("status", "on_hand"),
   ]);
   const w = bl.runway_weeks;
@@ -60,7 +62,7 @@ export default async function SalesPage(props: PageProps<"/sales">) {
           </div>
           <div className="mini" style={{ marginTop: 16, marginBottom: 0 }}>
             <div><label>งานคงเหลือ</label><b>{fNum(bl.backlog_qty)}</b> <span className="muted">ต้น</span></div>
-            <div><label>มูลค่าคงเหลือ</label><b>{fBaht(bl.backlog_value)}</b></div>
+            {money && <div><label>มูลค่าคงเหลือ</label><b>{fBaht(bl.backlog_value)}</b></div>}
             <div><label>อัตราตอก</label><b>{fNum(bl.rate_per_week)}</b> <span className="muted">ต้น/สัปดาห์</span></div>
             <div><label>ชะลอโครงการ (ไม่นับ)</label><b>{fNum(bl.hold_qty)}</b> <span className="muted">ต้น</span></div>
           </div>
@@ -70,6 +72,7 @@ export default async function SalesPage(props: PageProps<"/sales">) {
           <div className="chart-box"><RunwayForecast data={forecast} warnLabel={forecast[warnIdx]?.label} /></div>
         </div>
       </div>
+      {money ? (<>
       <div className="grid g3 mb">
         <Kpi tone="amber" icon="doc" label="SO รออนุมัติ" value={pendList.length} unit="โครงการ" cmp={<div className="cmp">{fBaht(pendList.reduce((s, x) => s + x.amt, 0))}</div>} />
         <Kpi tone="blue" icon="cal" label="รอเริ่มตอก (On Hand)" value={onHand ?? 0} unit="โครงการ" cmp={<div className="cmp">{fNum(bl.on_hand_qty)} ต้น</div>} />
@@ -90,6 +93,13 @@ export default async function SalesPage(props: PageProps<"/sales">) {
           </div>
         </div>
       </div>
+      </>) : (
+        <div className="grid g3">
+          <Kpi tone="blue" icon="cal" label="รอเริ่มตอก (On Hand)" value={onHand ?? 0} unit="โครงการ" cmp={<div className="cmp">{fNum(bl.on_hand_qty)} ต้น</div>} />
+          <Kpi tone="green" icon="pile" label="กำลังตอก คงเหลือ" value={fNum(bl.ongoing_qty)} unit="ต้น" cmp={<div className="cmp">อัตรา {fNum(bl.rate_per_week)} ต้น/สัปดาห์</div>} />
+          <Kpi tone="amber" icon="alert" label="ชะลอโครงการ" value={fNum(bl.hold_qty)} unit="ต้น" cmp={<div className="cmp">ไม่นับใน Runway</div>} />
+        </div>
+      )}
     </>
   );
 }

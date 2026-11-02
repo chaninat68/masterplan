@@ -15,15 +15,16 @@ export type Progress = {
 };
 export type ProjectRow = Project & Progress;
 
-const PROJECT_COLS = "code, customer_name, project_name, agency, province, pm, sales, status, order_qty, contract_value, value_per_pile, start_date, end_date, billing_cycle, end_note, order_source";
+// มูลค่าเงิน (contract_value, value_per_pile) อ่านจาก v_project_money เท่านั้น — ฝ่ายตอก/ฝ่ายผลิตได้แถวว่าง = 0
+const PROJECT_COLS = "code, customer_name, project_name, agency, province, pm, sales, status, order_qty, start_date, end_date, billing_cycle, end_note, order_source";
 const PROGRESS_COLS = "project_code, done_qty, plan_to_date, plan_total, has_plan, ahead_behind, remain_qty, rate_per_day, eta, pct_done, pct_plan, value_done, value_remain";
 
 const n = (v: unknown) => (v == null ? 0 : Number(v));
 
 /** โครงการทั้งหมด + ความคืบหน้าจาก view (คำนวณในฐานข้อมูล) — asof = ดูย้อนหลัง ณ วันที่นั้น */
 export async function getProjects(supabase: Supa, filter?: { codes?: string[]; status?: ProjectStatus[]; asof?: string }): Promise<ProjectRow[]> {
-  const [projects, progress] = await Promise.all([
-    fetchAll<Project>((a, b) => {
+  const [projects, progress, money] = await Promise.all([
+    fetchAll<Omit<Project, "contract_value" | "value_per_pile">>((a, b) => {
       let q = supabase.from("projects").select(PROJECT_COLS).order("code").range(a, b);
       if (filter?.codes) q = q.in("code", filter.codes);
       if (filter?.status) q = q.in("status", filter.status);
@@ -35,13 +36,18 @@ export async function getProjects(supabase: Supa, filter?: { codes?: string[]; s
       if (filter?.status) q = q.in("status", filter.status);
       return q;
     }),
+    fetchAll<{ code: string; contract_value: number; value_per_pile: number }>((a, b) => {
+      const q = supabase.from("v_project_money").select("code, contract_value, value_per_pile").order("code").range(a, b);
+      return filter?.codes ? q.in("code", filter.codes) : q;
+    }),
   ]);
   const pm = new Map(progress.map((p) => [p.project_code, p]));
+  const mm = new Map(money.map((m) => [m.code, m]));
   return projects.map((p) => {
     const g = pm.get(p.code);
     return {
       ...p,
-      order_qty: n(p.order_qty), contract_value: n(p.contract_value), value_per_pile: n(p.value_per_pile),
+      order_qty: n(p.order_qty), contract_value: n(mm.get(p.code)?.contract_value), value_per_pile: n(mm.get(p.code)?.value_per_pile),
       project_code: p.code, done_qty: n(g?.done_qty), plan_to_date: n(g?.plan_to_date), plan_total: n(g?.plan_total),
       has_plan: !!g?.has_plan, ahead_behind: n(g?.ahead_behind), remain_qty: n(g?.remain_qty), rate_per_day: n(g?.rate_per_day),
       eta: g?.eta ?? null, pct_done: n(g?.pct_done), pct_plan: n(g?.pct_plan), value_done: n(g?.value_done), value_remain: n(g?.value_remain),
