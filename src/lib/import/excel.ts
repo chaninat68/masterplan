@@ -49,6 +49,7 @@ export function parseDate(v: Cell): string {
   if (typeof v === "number") return v > 20000 && v < 80000 ? serialToIso(v) : "";
   if (v instanceof Date) return v.toISOString().slice(0, 10);
   const s = String(v).trim();
+  if (/^\d{5}(\.\d+)?$/.test(s)) return parseDate(Number(s)); // Excel serial ที่เก็บเป็นข้อความ
   let m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})$/);
   if (m) {
     let y = Number(m[3]);

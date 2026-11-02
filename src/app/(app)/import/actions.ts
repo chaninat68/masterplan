@@ -46,11 +46,14 @@ export async function previewImport(kindRaw: string, formData: FormData): Promis
     if (kind === "queue") {
       const r = parseQueue(readSheets(buf));
       const minDate = r.rows.reduce((m, x) => (x.work_date < m ? x.work_date : m), "9999-12-31");
-      const existing = new Set(
-        (await fetchAll<{ dedupe_key: string }>((a, b) =>
-          supabase.from("drive_logs").select("dedupe_key").gte("work_date", minDate).order("id").range(a, b))).map((x) => x.dedupe_key),
-      );
+      const maxDate = r.rows.reduce((m, x) => (x.work_date > m ? x.work_date : m), "0000-01-01");
+      const dbRows = await fetchAll<{ dedupe_key: string; source: string }>((a, b) =>
+        supabase.from("drive_logs").select("dedupe_key, source").gte("work_date", minDate).lte("work_date", maxDate).order("id").range(a, b));
+      const existing = new Set(dbRows.map((x) => x.dedupe_key));
       const fresh = r.rows.filter((x) => !existing.has(x.dedupe_key));
+      // แถวในระบบที่ไม่มีในไฟล์แล้ว (ไฟล์แก้/ลบ) → จะถูกเอาออกตอนบันทึก
+      const fileKeys = new Set(r.rows.map((x) => x.dedupe_key));
+      const removed = dbRows.filter((x) => x.source === "import" && !fileKeys.has(x.dedupe_key)).length;
       const { data: known } = await supabase.from("projects").select("code").in("code", [...new Set(fresh.map((x) => x.project_code))]);
       const knownSet = new Set((known ?? []).map((x) => x.code));
       const newProjects = new Set(fresh.filter((x) => !knownSet.has(x.project_code)).map((x) => x.project_code));
@@ -59,6 +62,7 @@ export async function previewImport(kindRaw: string, formData: FormData): Promis
         stats: [
           { label: "แถวใหม่ที่จะเพิ่ม", value: fresh.length, tone: "new" },
           { label: "มีอยู่แล้ว (ข้าม)", value: r.rows.length - fresh.length, tone: "dup" },
+          { label: "แก้/ลบตามไฟล์", value: removed, tone: "warn" },
           { label: "แถวผิด", value: r.errors.length, tone: "err" },
           { label: "โครงการใหม่", value: newProjects.size, tone: "warn" },
         ],
@@ -67,7 +71,7 @@ export async function previewImport(kindRaw: string, formData: FormData): Promis
           หมายเหตุ: knownSet.has(x.project_code) ? "" : "โครงการใหม่",
         })),
         errors: r.errors.slice(0, 50).map((e) => `แถว ${e.row}: ${e.reason}`),
-        note: `แท็บ ${r.sheet} · ${r.rows.length.toLocaleString("th-TH")} แถวที่อ่านได้`,
+        note: `แท็บ ${r.sheet} · ${r.rows.length.toLocaleString("th-TH")} แถวที่อ่านได้ · แถวในระบบช่วง ${minDate} ถึง ${maxDate} ที่ไม่มีในไฟล์แล้วจะถูกเอาออก (ย้อนกลับได้)`,
       };
     }
     if (kind === "master_planning") {
@@ -118,7 +122,7 @@ export async function commitImport(kindRaw: string, formData: FormData): Promise
       const r = parseQueue(readSheets(buf));
       const { data, error } = await supabase.rpc("import_drive_logs", { p_file_name: name, p_rows: r.rows, p_error_rows: r.errors.length });
       if (error) throw new Error(error.message);
-      message = `เพิ่ม ${Number(data.added).toLocaleString("th-TH")} แถว · ข้ามที่มีอยู่แล้ว ${Number(data.duplicate).toLocaleString("th-TH")} แถว`;
+      message = `เพิ่ม ${Number(data.added).toLocaleString("th-TH")} แถว · เอาออกตามไฟล์ ${Number(data.removed ?? 0).toLocaleString("th-TH")} แถว · ข้ามที่มีอยู่แล้ว ${Number(data.duplicate).toLocaleString("th-TH")} แถว`;
     } else if (kind === "master_planning") {
       const r = parseMasterPlanning(readSheets(buf, ["Pile", " Pile"]), await legacyCutoff());
       const { data, error } = await supabase.rpc("import_master_planning", {

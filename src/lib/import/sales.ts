@@ -31,13 +31,23 @@ const COLS = {
   construction: "ประเภทงานก่อสร้าง App", province: "จังหวัด",
 } as const;
 
+// ตำแหน่งคอลัมน์ (เริ่ม 0) ของแท็บ dataรวม รูปแบบมาตรฐาน 65 คอลัมน์ (A–BM)
+const STD_POS: Record<keyof typeof COLS, number> = {
+  type: 0, date: 1, so: 2, project: 3, pname: 4, ccode: 6, cname: 7, group: 8, icode: 9, iname: 10, section: 11,
+  standard: 12, form: 13, length: 14, qty: 17, price: 18, fee: 19, amount: 20, appr: 25, work: 26, creg: 28,
+  construction: 31, kind: 33, m3: 36, product: 37, gp: 41, isNew: 42, sales: 44, svc: 46, province: 63,
+};
+
 export function parseSales(wb: XLSX.WorkBook): SalesParse {
   const name = findSheet(wb, "dataรวม");
   if (!name) throw new Error('ไม่พบแท็บ "dataรวม" — ใช่ไฟล์ข้อมูล SO หรือไม่');
   const aoa = sheetRows(wb, name);
   const header = (aoa[0] ?? []).map((c) => str(c));
+  // บางไฟล์ไม่มีแถวหัวตาราง (แถวแรกเป็นข้อมูลเลย) → ใช้ตำแหน่งคอลัมน์มาตรฐานของแท็บ dataรวม
+  const noHeader = ["P", "R", "C"].includes(header[0] ?? "");
   const idx = {} as Record<keyof typeof COLS, number>;
-  for (const [k, h] of Object.entries(COLS)) idx[k as keyof typeof COLS] = header.indexOf(h);
+  for (const [k, h] of Object.entries(COLS))
+    idx[k as keyof typeof COLS] = noHeader ? STD_POS[k as keyof typeof COLS] : header.indexOf(h);
   const need: (keyof typeof COLS)[] = ["type", "date", "project", "qty", "amount"];
   const missing = need.filter((k) => idx[k] < 0).map((k) => COLS[k]);
   if (missing.length) throw new Error(`แท็บ dataรวม ขาดคอลัมน์: ${missing.join(", ")}`);
@@ -46,7 +56,7 @@ export function parseSales(wb: XLSX.WorkBook): SalesParse {
   const docs: SalesDoc[] = [];
   const customers = new Map<string, Customer>();
   let skipped = 0;
-  for (const r of aoa.slice(1)) {
+  for (const r of aoa.slice(noHeader ? 0 : 1)) {
     const t = str(g(r, "type"));
     const d = parseDate(g(r, "date"));
     if ((t !== "P" && t !== "R" && t !== "C") || !d) { if (t || d) skipped++; continue; }
