@@ -17,10 +17,10 @@ const load = (p: string, sheets?: string[]) => {
 };
 
 describe.skipIf(!existsSync(FILES.queue))("ไฟล์คิว-วัน", () => {
-  it("ยอดรวม 61,434 ต้น และคีย์ไม่ซ้ำ", () => {
+  it("ยอดรวมอย่างน้อย 61,434 ต้น (ไฟล์สะสม ณ 19 ต.ค. 69) และคีย์ไม่ซ้ำ", () => {
     const r = parseQueue(load(FILES.queue));
     const total = r.rows.reduce((s, x) => s + x.qty, 0);
-    expect(Math.round(total)).toBe(61434);
+    expect(Math.round(total)).toBeGreaterThanOrEqual(61434);
     expect(new Set(r.rows.map((x) => x.dedupe_key)).size).toBe(r.rows.length);
     expect(r.errors.length).toBeLessThan(10);
   }, 120_000);

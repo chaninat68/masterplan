@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requirePage } from "@/lib/auth";
 import { createClient, fetchAll } from "@/lib/supabase/server";
-import { getAsof, getProjects } from "@/lib/data";
+import { getProjects, resolveAsof } from "@/lib/data";
 import { canSeeSales } from "@/lib/roles";
 import { addDays, dayRange, fBaht2, fDate, fDateShort, fNum, STATUS_LABEL } from "@/lib/format";
 import { AheadChip, CardHead, Empty, PageHeader, StatusBadge } from "@/components/ui";
@@ -26,14 +26,16 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
   const sp = await props.searchParams;
   const tab = sp.tab === "curve" || sp.tab === "so" ? sp.tab : "days";
   const supabase = await createClient();
-  const [asof, [p]] = await Promise.all([getAsof(supabase), getProjects(supabase, { codes: [code] })]);
+  const { latest, asof, pick } = await resolveAsof(supabase, sp.asof);
+  const [p] = await getProjects(supabase, { codes: [code], asof: pick });
+  const at = pick ? `asof=${pick}` : "";
   if (!p) notFound();
 
   const showSales = canSeeSales(user.role);
   const [plans, actuals, logs, notesRes, so, siteRes] = await Promise.all([
     fetchAll<{ plan_date: string; planned_qty: number }>((a, b) => supabase.from("project_plan_days").select("plan_date, planned_qty").eq("project_code", code).order("plan_date").range(a, b)),
-    fetchAll<{ work_date: string; qty: number }>((a, b) => supabase.from("v_project_actual_days").select("work_date, qty").eq("project_code", code).order("work_date").range(a, b)),
-    fetchAll<DayLog>((a, b) => supabase.from("drive_logs").select("id, work_date, rig_name, rig_type, size_code, length_m, shift, qty, leader, company_raw, source").eq("project_code", code).gt("qty", 0).order("work_date").range(a, b)),
+    fetchAll<{ work_date: string; qty: number }>((a, b) => supabase.from("v_project_actual_days").select("work_date, qty").eq("project_code", code).lte("work_date", asof).order("work_date").range(a, b)),
+    fetchAll<DayLog>((a, b) => supabase.from("drive_logs").select("id, work_date, rig_name, rig_type, size_code, length_m, shift, qty, leader, company_raw, source").eq("project_code", code).gt("qty", 0).lte("work_date", asof).order("work_date").range(a, b)),
     supabase.from("daily_notes").select("project_code, note_date, body").or(`project_code.eq.${code},project_code.is.null`).limit(1000),
     showSales
       ? fetchAll<SoDoc>((a, b) => supabase.from("sales_docs").select("doc_type, doc_date, group_product, item_kind, qty, amount, approval_status").eq("project_code", code).order("doc_date").range(a, b))
@@ -76,8 +78,8 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
     <>
       <PageHeader
         title={<><span className="code" style={{ fontSize: "inherit" }}>{p.code}</span> {p.project_name}</>}
-        sub={<><Link href="/projects" className="link">← แผน / ผลงาน</Link> · {p.customer_name}</>}
-        asof={asof} readOnly={!ce} right={<StatusBadge status={p.status} />} />
+        sub={<><Link href={`/projects${at ? `?${at}` : ""}`} className="link">← แผน / ผลงาน</Link> · {p.customer_name}</>}
+        asof={asof} latest={latest} readOnly={!ce} right={<StatusBadge status={p.status} />} />
 
       <div className="fields mb">
         <div><label>ลูกค้า</label><InlineEdit canEdit={ce} value={p.customer_name} onSave={save("customer_name")} /></div>
@@ -111,9 +113,9 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
       )}
 
       <div className="seg dtabs">
-        <Link href={`/projects/${code}`} className={tab === "days" ? "on" : ""} scroll={false}>แผนเทียบผลงานรายวัน</Link>
-        <Link href={`/projects/${code}?tab=curve`} className={tab === "curve" ? "on" : ""} scroll={false}>S-curve &amp; ขนาดเสา</Link>
-        {showSales && so.length > 0 && <Link href={`/projects/${code}?tab=so`} className={tab === "so" ? "on" : ""} scroll={false}>ใบ P − R − C</Link>}
+        <Link href={`/projects/${code}${at ? `?${at}` : ""}`} className={tab === "days" ? "on" : ""} scroll={false}>แผนเทียบผลงานรายวัน</Link>
+        <Link href={`/projects/${code}?tab=curve${at ? `&${at}` : ""}`} className={tab === "curve" ? "on" : ""} scroll={false}>S-curve &amp; ขนาดเสา</Link>
+        {showSales && so.length > 0 && <Link href={`/projects/${code}?tab=so${at ? `&${at}` : ""}`} className={tab === "so" ? "on" : ""} scroll={false}>ใบ P − R − C</Link>}
       </div>
 
       {tab === "days" && (

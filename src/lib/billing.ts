@@ -6,12 +6,12 @@ export type BillingRow = {
   code: string; name: string; customer: string; billing: string; done: number; vpp: number; valueDone: number; monthQty: number; monthValue: number;
 };
 
-/** รายงานวางบิลเดือนของวันที่ข้อมูลล่าสุด: โครงการที่กำลังตอก หรือมีผลงานในเดือนนั้น */
-export async function getBilling(supabase: Supa): Promise<{ asof: string; month: string; rows: BillingRow[] }> {
-  const asof = await getAsof(supabase);
+/** รายงานวางบิลเดือนของวันที่ข้อมูลล่าสุด (หรือวันที่เลือก pick): โครงการที่กำลังตอก หรือมีผลงานในเดือนนั้น */
+export async function getBilling(supabase: Supa, pick?: string): Promise<{ asof: string; month: string; rows: BillingRow[] }> {
+  const asof = pick ?? (await getAsof(supabase));
   const month = asof.slice(0, 7);
   const [projects, logs] = await Promise.all([
-    getProjects(supabase),
+    getProjects(supabase, { asof: pick }),
     fetchAll<{ project_code: string; qty: number }>((a, b) =>
       supabase.from("drive_logs").select("project_code, qty").gte("work_date", `${month}-01`).lte("work_date", asof).order("id").range(a, b)),
   ]);

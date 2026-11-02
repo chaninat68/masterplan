@@ -1,9 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "./Icon";
+import { AsofPicker } from "./AsofPicker";
 import { fDate, fNum, STATUS_LABEL } from "@/lib/format";
 
-export function PageHeader({ title, sub, right, asof, readOnly }: { title: ReactNode; sub: ReactNode; right?: ReactNode; asof?: string; readOnly?: boolean }) {
+/** latest = เลือกวันที่ "ข้อมูลถึง" ได้ (ไม่เกิน latest) */
+export function PageHeader({ title, sub, right, asof, latest, readOnly }: { title: ReactNode; sub: ReactNode; right?: ReactNode; asof?: string; latest?: string; readOnly?: boolean }) {
   return (
     <div className="hello">
       <div>
@@ -13,7 +15,8 @@ export function PageHeader({ title, sub, right, asof, readOnly }: { title: React
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {readOnly && <span className="chip ro">ดูอย่างเดียว</span>}
         {right}
-        {asof && (
+        {asof && latest && <AsofPicker value={asof} latest={latest} />}
+        {asof && !latest && (
           <span className="chip">
             <Icon name="cal" size={16} />
             ข้อมูลถึง {fDate(asof)}

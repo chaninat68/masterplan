@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requirePage } from "@/lib/auth";
 import { createClient, fetchAll } from "@/lib/supabase/server";
-import { getBacklog } from "@/lib/data";
+import { getBacklog, resolveAsof } from "@/lib/data";
 import { addDays, fBaht, fDate, fDateShort, fNum } from "@/lib/format";
 import { CardHead, Empty, Kpi, PageHeader } from "@/components/ui";
 import { InlineEdit } from "@/components/InlineEdit";
@@ -12,13 +12,14 @@ export const metadata: Metadata = { title: "ยอดขาย & Runway" };
 
 type Doc = { project_code: string; doc_type: string; doc_date: string; customer_name: string; customer_code: string | null; amount: number; approval_status: string; salesperson: string; is_new_customer: boolean };
 
-export default async function SalesPage() {
+export default async function SalesPage(props: PageProps<"/sales">) {
   const user = await requirePage("sales");
   const supabase = await createClient();
-  const bl = await getBacklog(supabase);
+  const { latest, pick } = await resolveAsof(supabase, (await props.searchParams).asof);
+  const bl = await getBacklog(supabase, pick);
   const year = bl.asof.slice(0, 4);
   const [docs, { count: onHand }] = await Promise.all([
-    fetchAll<Doc>((a, b) => supabase.from("sales_docs").select("project_code, doc_type, doc_date, customer_name, customer_code, amount, approval_status, salesperson, is_new_customer").gte("doc_date", `${year}-01-01`).order("id").range(a, b)),
+    fetchAll<Doc>((a, b) => supabase.from("sales_docs").select("project_code, doc_type, doc_date, customer_name, customer_code, amount, approval_status, salesperson, is_new_customer").gte("doc_date", `${year}-01-01`).lte("doc_date", bl.asof).order("id").range(a, b)),
     supabase.from("projects").select("code", { count: "exact", head: true }).eq("status", "on_hand"),
   ]);
   const w = bl.runway_weeks;
@@ -45,7 +46,7 @@ export default async function SalesPage() {
 
   return (
     <>
-      <PageHeader title="ยอดขาย & Runway" sub="งานในมือเหลือพอทำอีกกี่สัปดาห์ และเมื่อไรต้องเร่งเซลล์หายอด" asof={bl.asof} readOnly={!user.canEdit} />
+      <PageHeader title="ยอดขาย & Runway" sub="งานในมือเหลือพอทำอีกกี่สัปดาห์ และเมื่อไรต้องเร่งเซลล์หายอด" asof={bl.asof} latest={latest} readOnly={!user.canEdit} />
       <div className="grid g64 mb">
         <div className={`card kpi-card t-${lvl === "red" ? "red" : lvl === "amber" ? "amber" : "green"}`}>
           <CardHead title="Runway งานในมือ" sub="งานคงเหลือ ÷ อัตราตอกเฉลี่ย 4 สัปดาห์ล่าสุด"

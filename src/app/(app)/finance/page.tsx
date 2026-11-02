@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePage } from "@/lib/auth";
 import { createClient, fetchAll } from "@/lib/supabase/server";
-import { getBacklog } from "@/lib/data";
+import { getBacklog, resolveAsof } from "@/lib/data";
 import { BILLING_HEADERS, billingRow, getBilling } from "@/lib/billing";
 import { fBaht, fBaht2, fMonth, fNum } from "@/lib/format";
 import { CardHead, Empty, Kpi, PageHeader } from "@/components/ui";
@@ -14,13 +14,14 @@ import { updateProject } from "../projects/actions";
 
 export const metadata: Metadata = { title: "การเงิน / วางบิล" };
 
-export default async function FinancePage() {
+export default async function FinancePage(props: PageProps<"/finance">) {
   const user = await requirePage("finance");
   const supabase = await createClient();
-  const [{ asof, month, rows }, bl] = await Promise.all([getBilling(supabase), getBacklog(supabase)]);
+  const { latest, pick } = await resolveAsof(supabase, (await props.searchParams).asof);
+  const [{ asof, month, rows }, bl] = await Promise.all([getBilling(supabase, pick), getBacklog(supabase, pick)]);
   const year = asof.slice(0, 4);
   const sm = await fetchAll<{ month: string; salesperson: string; doc_type: string; amount: number }>((a, b) =>
-    supabase.from("v_sales_monthly").select("month, salesperson, doc_type, amount").gte("month", `${year}-01-01`).range(a, b));
+    supabase.from("v_sales_monthly").select("month, salesperson, doc_type, amount").gte("month", `${year}-01-01`).lte("month", asof).range(a, b));
   const P = sm.filter((x) => x.doc_type === "P").reduce((s, x) => s + Number(x.amount), 0);
   const RC = sm.filter((x) => x.doc_type !== "P").reduce((s, x) => s + Number(x.amount), 0);
   const months = [...new Set(sm.map((x) => x.month.slice(0, 7)))].sort();
@@ -41,8 +42,8 @@ export default async function FinancePage() {
 
   return (
     <>
-      <PageHeader title="การเงิน / วางบิล" sub="มูลค่าผลงานตามรอบวางบิล และยอดขายสุทธิ (P − R − C) สำหรับฝ่ายบัญชี" asof={asof} readOnly={!user.canEdit}
-        right={<><a className="btn ghost" href="/api/export/billing"><Icon name="dl" />Export รายงานวางบิล</a><CopyTextButton title="คัดลอกไป Excel" text={tsv} /></>} />
+      <PageHeader title="การเงิน / วางบิล" sub="มูลค่าผลงานตามรอบวางบิล และยอดขายสุทธิ (P − R − C) สำหรับฝ่ายบัญชี" asof={asof} latest={latest} readOnly={!user.canEdit}
+        right={<><a className="btn ghost" href={`/api/export/billing${pick ? `?asof=${pick}` : ""}`}><Icon name="dl" />Export รายงานวางบิล</a><CopyTextButton title="คัดลอกไป Excel" text={tsv} /></>} />
       <div className="grid g4 mb">
         <Kpi tone="blue" icon="money" label={`มูลค่าผลงานเดือน ${fMonth(month)}`} value={fBaht(mV)} cmp={<div className="cmp">{fNum(mQ)} ต้น · {rows.filter((r) => r.monthQty).length} โครงการ</div>} />
         <Kpi tone="green" icon="trend" label={`ยอดขายสุทธิ ปี ${Number(year) + 543}`} value={fBaht(P + RC)} cmp={<div className="cmp">เปิดขาย (P) {fBaht(P)}</div>} />

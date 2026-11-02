@@ -80,6 +80,7 @@ a{color:var(--accent);text-decoration:none}
 .hello h1{margin:0;font-size:26px;letter-spacing:-.01em}
 .hello p{margin:2px 0 0;color:var(--ink-2)}
 .chip{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:13px;color:var(--ink-2);white-space:nowrap}
+.asof-pick{position:relative;cursor:pointer}.asof-pick label{display:inline-flex;align-items:center;gap:8px;position:relative;cursor:pointer}.asof-pick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}.asof-pick:hover{border-color:var(--line-2)}.asof-pick.past{border-color:var(--warn-ink);color:var(--warn-ink)}.asof-pick button{border:0;background:var(--i-amber);color:var(--warn-ink);border-radius:6px;padding:2px 8px;font:inherit;font-size:12px;cursor:pointer}
 .ro{background:var(--warn-soft);color:var(--warn-ink);border-color:transparent;font-weight:600}
 /* grid & cards */
 .grid{display:grid;gap:18px}

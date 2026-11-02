@@ -82,10 +82,10 @@ export async function previewImport(kindRaw: string, formData: FormData): Promis
           { label: "หมายเหตุรายวัน", value: r.notes.length, tone: "warn" },
         ],
         sample: r.projects.filter((p) => p.status === "ongoing" || p.status === "on_hand").map((p) => ({
-          รหัส: p.code, โครงการ: p.project_name, สถานะ: p.status, สั่งซื้อ: p.order_qty, เริ่ม: p.start_date ?? "", เสร็จ: p.end_date ?? "", รอบวางบิล: p.billing_cycle,
+          รหัส: p.code, โครงการ: p.project_name, สถานะ: p.status, สั่งซื้อ: p.order_qty, เริ่ม: p.start_date ?? "", เสร็จ: p.end_date ?? "", เงื่อนไขส่งมอบงาน: p.billing_cycle,
         })),
         errors: [],
-        note: "ข้อมูลโครงการและแผนรายวันของโครงการในไฟล์จะถูกแทนที่ด้วยไฟล์นี้ (หมายเหตุที่พิมพ์ในเว็บจะไม่ถูกทับ)",
+        note: `ข้อมูลโครงการ และแผนรายวันช่วง ${r.dateFrom} ถึง ${r.dateTo} ของโครงการในไฟล์จะถูกแทนที่ด้วยไฟล์นี้${r.hasActual ? "" : " · ไฟล์ไม่มีแถว Actual: ผลงานจริงยังใช้จากไฟล์คิว-วัน"} (หมายเหตุที่พิมพ์ในเว็บจะไม่ถูกทับ)`,
       };
     }
     const r = parseSales(readSheets(buf, ["dataรวม"]));
@@ -123,6 +123,7 @@ export async function commitImport(kindRaw: string, formData: FormData): Promise
       const r = parseMasterPlanning(readSheets(buf, ["Pile", " Pile"]), await legacyCutoff());
       const { data, error } = await supabase.rpc("import_master_planning", {
         p_file_name: name, p_projects: r.projects, p_plans: r.plans, p_legacy: r.legacy, p_notes: r.notes,
+        p_plan_from: r.dateFrom, p_plan_to: r.dateTo, p_replace_legacy: r.hasActual,
       });
       if (error) throw new Error(error.message);
       message = `อัพเดท ${data.projects} โครงการ · แผน ${Number(data.plans).toLocaleString("th-TH")} วัน · หมายเหตุใหม่ ${data.notes}`;

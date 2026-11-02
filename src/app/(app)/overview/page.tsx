@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePage } from "@/lib/auth";
 import { createClient, fetchAll } from "@/lib/supabase/server";
-import { getBacklog, getProjects } from "@/lib/data";
+import { getBacklog, getProjects, resolveAsof } from "@/lib/data";
 import { canSeeSales } from "@/lib/roles";
 import { addDays, dayRange, dow, fBaht, fDate, fDateShort, fNum, STATUS_LABEL, TH_DAYS } from "@/lib/format";
 import { AheadChip, CardHead, Delta, Empty, Kpi, PageHeader, Progress } from "@/components/ui";
@@ -20,8 +20,9 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
   const sp = await props.searchParams;
   const range = sp.range === "90" ? 90 : 30;
   const supabase = await createClient();
-  const [bl, projects] = await Promise.all([getBacklog(supabase), getProjects(supabase)]);
-  const asof = bl.asof;
+  // ?asof= ดูย้อนหลัง ณ วันที่เลือก (ไม่เกินวันที่ข้อมูลล่าสุด)
+  const { latest, asof, pick } = await resolveAsof(supabase, sp.asof);
+  const [bl, projects] = await Promise.all([getBacklog(supabase, pick), getProjects(supabase, { asof: pick })]);
   const ym = asof.slice(0, 7);
   const prevMonthEnd = addDays(ym + "-01", -1);
   const pm = prevMonthEnd.slice(0, 7);
@@ -33,7 +34,7 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
   const [logs, daily, notesRes, batchesRes, salesRes] = await Promise.all([
     fetchAll<DayLog>((a, b) => supabase.from("drive_logs").select("work_date, project_code, qty, province, rig_type").gte("work_date", sinceLogs).lte("work_date", asof).order("id").range(a, b)),
     fetchAll<{ work_date: string; company_category: string; qty: number }>((a, b) => supabase.from("v_daily_company").select("work_date, company_category, qty").gte("work_date", fromChart).lte("work_date", asof).range(a, b)),
-    supabase.from("daily_notes").select("project_code, note_date, body, source").neq("body", "ไม่มีการตอก").gte("note_date", addDays(asof, -60)).order("note_date", { ascending: false }).limit(5),
+    supabase.from("daily_notes").select("project_code, note_date, body, source").neq("body", "ไม่มีการตอก").gte("note_date", addDays(asof, -60)).lte("note_date", asof).order("note_date", { ascending: false }).limit(5),
     supabase.from("import_batches").select("file_name, rows_added, created_at, undone_at").order("created_at", { ascending: false }).limit(3),
     canSeeSales(user.role)
       ? fetchAll<{ project_code: string; doc_type: string; doc_date: string; approval_status: string }>((a, b) =>
@@ -107,7 +108,7 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
 
   return (
     <>
-      <PageHeader title={`สวัสดี, ${user.name}`} sub="ภาพรวมงานตอกเสาเข็มและงานในมือของบริษัท" asof={asof} readOnly={!user.canEdit}
+      <PageHeader title={`สวัสดี, ${user.name}`} sub="ภาพรวมงานตอกเสาเข็มและงานในมือของบริษัท" asof={asof} latest={latest} readOnly={!user.canEdit}
         right={<CopyTextButton title="สรุปส่ง LINE" text={lineText} icon="line" />} />
       <div className="grid g4 mb">
         <Kpi tone="blue" icon="pile" label={`ตอกวันล่าสุด · ${fDateShort(asof)}`} value={fNum(dayQty(asof))} unit="ต้น" cmp={<Delta cur={dayQty(asof)} prev={dayQty(prevDay)} label={`เทียบ ${fDateShort(prevDay)}`} />} />
@@ -119,7 +120,7 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
 
       <div className="grid g12 mb">
         <div className="card span7">
-          <CardHead title="โครงการที่กำลังตอก" sub={`${ongoing.length} โครงการ · ขีดดำบนแถบ = ตำแหน่งตามแผน ณ วันนี้`} href="/projects?tab=ongoing" />
+          <CardHead title="โครงการที่กำลังตอก" sub={`${ongoing.length} โครงการ · ขีดดำบนแถบ = ตำแหน่งตามแผน ณ ${pick ? fDateShort(asof) : "วันนี้"}`} href="/projects?tab=ongoing" />
           <div className="tbl-wrap">
             <table>
               <thead><tr><th>โครงการ</th><th className="num">ตอกแล้ว / สั่งซื้อ</th><th>เทียบแผน</th><th style={{ minWidth: 140 }}>ความคืบหน้า</th></tr></thead>
@@ -138,7 +139,7 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
           {!ongoing.length && <Empty>ยังไม่มีโครงการที่กำลังตอก — นำเข้าไฟล์ Master Planning ก่อน</Empty>}
         </div>
         <div className="card span5 flexcol">
-          <CardHead title="ผลงานตอกรายวัน" sub="ต้น/วัน แยกตามเจ้าของปั้นจั่น" right={<RangeToggle value={range} />} />
+          <CardHead title="ผลงานตอกรายวัน" sub="ต้น/วัน แยกตามเจ้าของปั้นจั่น" right={<RangeToggle value={range} asof={pick} />} />
           <div className="legend"><span><i style={{ background: "var(--s1)" }} />เอเซีย</span><span><i style={{ background: "var(--s2)" }} />เอเซียร่วม</span><span><i style={{ background: "var(--s3)" }} />ผู้รับเหมาร่วม</span></div>
           <div className="chart-box grow"><DailyStack data={chart} /></div>
         </div>

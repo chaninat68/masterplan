@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePage } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getAsof, getProjects, type ProjectStatus } from "@/lib/data";
+import { getProjects, resolveAsof, type ProjectStatus } from "@/lib/data";
 import { fDate, fNum, STATUS_LABEL } from "@/lib/format";
 import { AheadChip, Empty, PageHeader, Progress, StatusBadge } from "@/components/ui";
 import { Icon } from "@/components/Icon";
@@ -17,7 +17,9 @@ export default async function ProjectsPage(props: PageProps<"/projects">) {
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
   const tab = (typeof sp.tab === "string" && TABS.includes(sp.tab as ProjectStatus) ? sp.tab : "ongoing") as ProjectStatus | "all";
   const supabase = await createClient();
-  const [asof, all] = await Promise.all([getAsof(supabase), getProjects(supabase)]);
+  const { latest, asof, pick } = await resolveAsof(supabase, sp.asof);
+  const all = await getProjects(supabase, { asof: pick });
+  const at = pick ? `&asof=${pick}` : "";
 
   let rows = q
     ? all.filter((p) => `${p.code} ${p.project_name} ${p.customer_name} ${p.pm} ${p.sales}`.toLowerCase().includes(q.toLowerCase()))
@@ -29,18 +31,19 @@ export default async function ProjectsPage(props: PageProps<"/projects">) {
 
   return (
     <>
-      <PageHeader title="แผน / ผลงานรายโครงการ" sub="คลิกโครงการเพื่อดูแผนเทียบผลงานรายวัน — ตอกด้วยปั้นจั่นไหน ขนาดอะไร ยาวเท่าไร กะไหน" asof={asof} readOnly={!user.canEdit} />
+      <PageHeader title="แผน / ผลงานรายโครงการ" sub="คลิกโครงการเพื่อดูแผนเทียบผลงานรายวัน — ตอกด้วยปั้นจั่นไหน ขนาดอะไร ยาวเท่าไร กะไหน" asof={asof} latest={latest} readOnly={!user.canEdit} />
       <div className="card">
         <div className="toolbar">
           <div className="seg">
             {TABS.map((t) => (
-              <Link key={t} href={`/projects?tab=${t}`} className={!q && tab === t ? "on" : ""}>
+              <Link key={t} href={`/projects?tab=${t}${at}`} className={!q && tab === t ? "on" : ""}>
                 {t === "all" ? "ทั้งหมด" : STATUS_LABEL[t]}<span className="n">{count(t)}</span>
               </Link>
             ))}
           </div>
           <div className="grow" />
           <form action="/projects" style={{ display: "flex", gap: 8 }}>
+            {pick && <input type="hidden" name="asof" value={pick} />}
             <input className="input" name="q" defaultValue={q} placeholder="ค้นหาในตาราง…" style={{ width: 220 }} />
           </form>
           <a className="btn ghost sm" href="/api/export/master-planning"><Icon name="dl" />Export Master Planning</a>
@@ -55,7 +58,7 @@ export default async function ProjectsPage(props: PageProps<"/projects">) {
                 return (
                   <tr key={p.code} className="prow">
                     <td>
-                      <Link href={`/projects/${p.code}`} className="pcell" style={{ color: "inherit" }}><span className="code">{p.code}</span><b>{p.project_name}</b></Link>
+                      <Link href={`/projects/${p.code}${pick ? `?asof=${pick}` : ""}`} className="pcell" style={{ color: "inherit" }}><span className="code">{p.code}</span><b>{p.project_name}</b></Link>
                       <span className="cell-sub" style={{ maxWidth: 420 }}>{p.customer_name}{p.pm ? ` · PM ${p.pm}` : ""}</span>
                     </td>
                     <td><StatusBadge status={p.status} /></td>

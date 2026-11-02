@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePage } from "@/lib/auth";
 import { createClient, fetchAll } from "@/lib/supabase/server";
-import { getAsof } from "@/lib/data";
+import { resolveAsof, viewAt } from "@/lib/data";
 import { addDays, dayRange, dow, fDate, fNum, TH_DAYS } from "@/lib/format";
 import { CardHead, Empty, Kpi, PageHeader } from "@/components/ui";
 import { Icon } from "@/components/Icon";
@@ -12,13 +12,13 @@ export const metadata: Metadata = { title: "ฝ่ายตอก" };
 
 type Rig = { rig_name: string; rig_type: string; company_raw: string; leader: string; last_date: string; last_project: string; qty_14d: number; days_14d: number; idle_days: number };
 
-export default async function DrivePage() {
+export default async function DrivePage(props: PageProps<"/drive">) {
   const user = await requirePage("drive");
   const supabase = await createClient();
-  const asof = await getAsof(supabase);
+  const { latest, asof, pick } = await resolveAsof(supabase, (await props.searchParams).asof);
   const days = dayRange(addDays(asof, 1), addDays(asof, 7));
   const [rigsAll, plans] = await Promise.all([
-    fetchAll<Rig>((a, b) => supabase.from("v_rig_status").select("*").gte("last_date", addDays(asof, -29)).order("last_date", { ascending: false }).range(a, b)),
+    fetchAll<Rig>((a, b) => viewAt(supabase, "v_rig_status", "rig_status_at", pick).select("*").gte("last_date", addDays(asof, -29)).order("last_date", { ascending: false }).range(a, b)),
     fetchAll<{ project_code: string; plan_date: string; planned_qty: number }>((a, b) => supabase.from("project_plan_days").select("project_code, plan_date, planned_qty").gte("plan_date", days[0]).lte("plan_date", days[6]).range(a, b)),
   ]);
   const rigs = rigsAll.map((r) => ({ ...r, idle: Number(r.idle_days) > 3 }));
@@ -39,8 +39,8 @@ export default async function DrivePage() {
 
   return (
     <>
-      <PageHeader title="คิวปั้นจั่น / ฝ่ายตอก" sub="ปั้นจั่นแต่ละตัวอยู่โครงการไหน แผนงาน 7 วันข้างหน้า และปั้นจั่นที่ว่าง" asof={asof} readOnly={!user.canEdit}
-        right={<><CopyTextButton title="ส่ง LINE" text={line} icon="line" /><a className="btn ghost" href="/api/export/rig-queue"><Icon name="dl" />Export Excel</a></>} />
+      <PageHeader title="คิวปั้นจั่น / ฝ่ายตอก" sub="ปั้นจั่นแต่ละตัวอยู่โครงการไหน แผนงาน 7 วันข้างหน้า และปั้นจั่นที่ว่าง" asof={asof} latest={latest} readOnly={!user.canEdit}
+        right={<><CopyTextButton title="ส่ง LINE" text={line} icon="line" /><a className="btn ghost" href={`/api/export/rig-queue${pick ? `?asof=${pick}` : ""}`}><Icon name="dl" />Export Excel</a></>} />
       <div className="grid g4 mb">
         <Kpi tone="blue" icon="crane" label="ปั้นจั่นที่ทำงาน (3 วัน)" value={rigs.length - idle.length} cmp={<div className="cmp">ใช้งานใน 30 วัน {rigs.length} ตัว</div>} />
         <Kpi tone="amber" icon="alert" label="ปั้นจั่นว่าง" value={idle.length} cmp={<div className="cmp">ไม่มีผลงานเกิน 3 วัน</div>} />

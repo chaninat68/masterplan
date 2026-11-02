@@ -20,8 +20,8 @@ const PROGRESS_COLS = "project_code, done_qty, plan_to_date, plan_total, has_pla
 
 const n = (v: unknown) => (v == null ? 0 : Number(v));
 
-/** โครงการทั้งหมด + ความคืบหน้าจาก view (คำนวณในฐานข้อมูล) */
-export async function getProjects(supabase: Supa, filter?: { codes?: string[]; status?: ProjectStatus[] }): Promise<ProjectRow[]> {
+/** โครงการทั้งหมด + ความคืบหน้าจาก view (คำนวณในฐานข้อมูล) — asof = ดูย้อนหลัง ณ วันที่นั้น */
+export async function getProjects(supabase: Supa, filter?: { codes?: string[]; status?: ProjectStatus[]; asof?: string }): Promise<ProjectRow[]> {
   const [projects, progress] = await Promise.all([
     fetchAll<Project>((a, b) => {
       let q = supabase.from("projects").select(PROJECT_COLS).order("code").range(a, b);
@@ -30,7 +30,7 @@ export async function getProjects(supabase: Supa, filter?: { codes?: string[]; s
       return q;
     }),
     fetchAll<Progress>((a, b) => {
-      let q = supabase.from("v_project_progress").select(PROGRESS_COLS).order("project_code").range(a, b);
+      let q = viewAt(supabase, "v_project_progress", "project_progress_at", filter?.asof).select(PROGRESS_COLS).order("project_code").range(a, b);
       if (filter?.codes) q = q.in("project_code", filter.codes);
       if (filter?.status) q = q.in("status", filter.status);
       return q;
@@ -53,8 +53,8 @@ export type Backlog = {
   asof: string; backlog_qty: number; backlog_value: number; ongoing_qty: number; on_hand_qty: number; hold_qty: number;
   hold_value: number; rate_per_week: number; threshold_weeks: number; runway_weeks: number | null; level: "red" | "amber" | "green";
 };
-export async function getBacklog(supabase: Supa): Promise<Backlog> {
-  const { data } = await supabase.from("v_backlog").select("*").maybeSingle();
+export async function getBacklog(supabase: Supa, asof?: string): Promise<Backlog> {
+  const { data } = await viewAt(supabase, "v_backlog", "backlog_at", asof).select("*").maybeSingle();
   return {
     asof: data?.asof ?? todayBangkok(), backlog_qty: n(data?.backlog_qty), backlog_value: n(data?.backlog_value),
     ongoing_qty: n(data?.ongoing_qty), on_hand_qty: n(data?.on_hand_qty), hold_qty: n(data?.hold_qty), hold_value: n(data?.hold_value),
@@ -66,6 +66,21 @@ export async function getBacklog(supabase: Supa): Promise<Backlog> {
 export async function getAsof(supabase: Supa): Promise<string> {
   const { data } = await supabase.from("v_data_asof").select("asof").maybeSingle();
   return data?.asof ?? todayBangkok();
+}
+
+/** วันที่ "ข้อมูลถึง" ของหน้า: ?asof= ที่ผู้ใช้เลือก (ต้องก่อนวันข้อมูลล่าสุด) ไม่งั้นใช้วันข้อมูลล่าสุด
+ *  pick = มีค่าเฉพาะตอนดูย้อนหลัง */
+export async function resolveAsof(supabase: Supa, raw: unknown): Promise<{ latest: string; asof: string; pick?: string }> {
+  const latest = await getAsof(supabase);
+  const ok = typeof raw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw) && !Number.isNaN(Date.parse(raw))
+    && new Date(raw).toISOString().slice(0, 10) === raw && raw < latest;
+  const pick = ok ? (raw as string) : undefined;
+  return { latest, asof: pick ?? latest, pick };
+}
+
+/** view ปัจจุบัน หรือฟังก์ชัน *_at(p_asof) ที่คืนคอลัมน์เดียวกัน → ใช้ .select/.order/.range ต่อได้เหมือนกัน */
+export function viewAt(supabase: Supa, view: string, fn: string, asof?: string) {
+  return asof ? (supabase.rpc(fn, { p_asof: asof }) as unknown as ReturnType<Supa["from"]>) : supabase.from(view);
 }
 
 export const COMPANY_LABEL: Record<string, string> = { asia: "เอเซีย", asia_joint: "เอเซียร่วม", subcontractor: "ผู้รับเหมาร่วม" };
