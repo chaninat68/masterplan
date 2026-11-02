@@ -14,7 +14,6 @@ export function Shell(props: {
   userName: string;
   roleLabel: string;
   canEdit: boolean;
-  behind: number;
   sideCard: ReactNode;
   children: ReactNode;
 }) {
@@ -70,10 +69,6 @@ export function Shell(props: {
             <button className="icon-btn" title="สลับธีม" onClick={toggleTheme}>
               <Icon name="moon" size={19} />
             </button>
-            <Link className="icon-btn" title="โครงการช้ากว่าแผน" href="/projects?tab=ongoing">
-              <Icon name="bell" size={19} />
-              {props.behind > 0 && <span className="dot">{props.behind}</span>}
-            </Link>
             <div className="me">
               <div className="avatar">{props.userName.slice(0, 1).toUpperCase()}</div>
               <div className="who">

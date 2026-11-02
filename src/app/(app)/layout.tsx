@@ -41,7 +41,6 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       userName={user.name}
       roleLabel={cfg.label}
       canEdit={user.canEdit}
-      behind={behind ?? 0}
       sideCard={
         <>
           <b>ข้อมูลล่าสุด {fDate(bl?.asof)}</b>
