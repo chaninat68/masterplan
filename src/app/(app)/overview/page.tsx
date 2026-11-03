@@ -55,6 +55,8 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
   const mV = sum(mL, (l) => Number(l.qty) * vpp(l.project_code)), pmV = sum(pmL, (l) => Number(l.qty) * vpp(l.project_code));
   const lvl = bl.level === "red" ? "red" : bl.level === "amber" ? "amber" : "green";
   const runwayTxt = bl.runway_weeks == null ? "∞" : fNum(bl.runway_weeks, 1);
+  const blAll = bl.ongoing_qty + bl.on_hand_qty + bl.hold_qty;
+  const blPct = (q: number) => (blAll ? `${Math.round((q / blAll) * 100)}%` : "–");
 
   const ongoing = projects.filter((p) => p.status === "ongoing").sort((a, b) => b.remain_qty - a.remain_qty);
   const behind = ongoing.filter((p) => p.has_plan && p.ahead_behind <= -0.5).sort((a, b) => a.ahead_behind - b.ahead_behind);
@@ -149,6 +151,7 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
 
       <div className="grid g3 mb">
         <div className="card">
+          {/* % ของงานในมือทั้งหมด (กำลังตอก + รอเริ่ม + ชะลอโครงการ) = สัดส่วนเดียวกับวงโดนัท */}
           <CardHead title="งานในมือ" sub={`คงเหลือ ${fNum(bl.backlog_qty)} ต้น${money ? ` · ${fBaht(bl.backlog_value)}` : ""}`} href="/sales" linkLabel="ดูเพิ่ม" />
           <div className="donut-wrap sm">
             <div className="donut-box">
@@ -156,9 +159,9 @@ export default async function OverviewPage(props: PageProps<"/overview">) {
               <div className="donut-c"><div><b>{runwayTxt}</b><span>สัปดาห์</span></div></div>
             </div>
             <div className="dl">
-              <div><i style={{ background: "var(--s1)" }} /><span>กำลังตอก</span><b>{fNum(bl.ongoing_qty)}</b><span className="p">ต้น</span></div>
-              <div><i style={{ background: "var(--s2)" }} /><span>รอเริ่ม</span><b>{fNum(bl.on_hand_qty)}</b><span className="p">ต้น</span></div>
-              <div><i style={{ background: "var(--line-2)" }} /><span>ชะลอโครงการ*</span><b>{fNum(bl.hold_qty)}</b><span className="p">ต้น</span></div>
+              <div><i style={{ background: "var(--s1)" }} /><span>กำลังตอก</span><b>{fNum(bl.ongoing_qty)}</b><span className="p">ต้น · {blPct(bl.ongoing_qty)}</span></div>
+              <div><i style={{ background: "var(--s2)" }} /><span>รอเริ่ม</span><b>{fNum(bl.on_hand_qty)}</b><span className="p">ต้น · {blPct(bl.on_hand_qty)}</span></div>
+              <div><i style={{ background: "var(--line-2)" }} /><span>ชะลอโครงการ*</span><b>{fNum(bl.hold_qty)}</b><span className="p">ต้น · {blPct(bl.hold_qty)}</span></div>
             </div>
           </div>
           <div className="sub" style={{ marginTop: 8 }}>อัตราตอก {fNum(bl.rate_per_week)} ต้น/สัปดาห์ · * ชะลอโครงการไม่นับใน Runway</div>

@@ -482,3 +482,184 @@ table tr.total td{font-weight:700;border-top:2px solid var(--line-2)}
 .icon-btn.sm{width:30px;height:30px;border-radius:8px}
 .minis.m5{grid-template-columns:repeat(5,1fr)}
 @media (max-width:760px){.minis.m5{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== ประชุมประจำเดือนส่วนงานวางแผน (/monthly) ===== */
+.pm-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.pm-tip{font-size:12.5px;color:var(--muted)}
+.pm-deck{display:flex;flex-direction:column;gap:16px}
+.pm-card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
+.pm-no{width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:12.5px;font-weight:700}
+.pm-card-title{flex:1;font-weight:600;color:var(--ink-2);font-size:13.5px}
+.pm-edit-bar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.pm-edit-bar label.btn{cursor:pointer}
+.pm-edit{margin-top:14px;padding:14px;border:1px dashed var(--line-2);border-radius:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:12px}
+.pm-edit-foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pm-edit .err,.pm-edit-foot .err{color:var(--bad-ink);font-size:12.5px}
+.ok-msg{color:var(--good-ink);font-size:12.5px}
+.pm-hint{font-size:12.5px;color:var(--muted);margin:0}
+.pm-form{display:flex;gap:12px;flex-wrap:wrap}
+.pm-lbl{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2)}
+.pm-lbl.block textarea{width:100%;font:inherit}
+.pm-in td,.pm-in th{padding:4px 6px;border:0}
+.pm-in .input{padding:5px 8px;font-size:13px}
+.pm-two{display:grid;grid-template-columns:1fr 1.4fr;gap:16px}
+@media (max-width:1000px){.pm-two{grid-template-columns:1fr}}
+.pm-row-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.pm-issues-edit{display:flex;flex-direction:column;gap:8px}
+.pm-issue-row{display:flex;gap:8px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px}
+.pm-issue-no{font-weight:700;color:var(--muted);width:20px;padding-top:6px}
+.pm-issue-fields{flex:1;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.pm-issue-fields>.input{width:200px}
+.pm-issue-fields>.input.wide{width:min(100%,380px)}
+.pm-issue-fields .input{padding:6px 10px;font-size:13px}
+.pm-issue-act{display:flex;flex-direction:column;gap:4px}
+
+/* สไลด์ */
+.pslide{--fs:1}
+.ps-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.ps-h{font-size:calc(22px*var(--fs));font-weight:700;margin:0;flex:1;color:var(--ink)}
+.ps-head-r{display:flex;gap:6px;flex-wrap:wrap}
+.ps-cover{min-height:300px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:24px 8px;gap:8px;background:radial-gradient(120% 120% at 100% 0%,var(--glow-1),transparent 60%);border-radius:14px}
+.pslide.big .ps-cover,.pslide.big .ps-divider{min-height:70vh;padding-left:4vw}
+.ps-cover h2{font-size:calc(48px*var(--fs));margin:0;font-weight:700;letter-spacing:-.5px;color:var(--accent)}
+.ps-co{font-size:calc(12.5px*var(--fs));letter-spacing:.12em;color:var(--muted);font-weight:600}
+.ps-date{font-size:calc(22px*var(--fs));font-weight:600}
+.ps-sub{color:var(--ink-2);font-size:calc(14px*var(--fs))}
+.ps-divider{min-height:300px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:24px 8px}
+.ps-divider span{font-size:calc(64px*var(--fs));font-weight:800;color:var(--accent);line-height:1}
+.ps-divider h2{font-size:calc(40px*var(--fs));margin:0}
+.ps-agenda{display:flex;flex-direction:column;gap:14px;justify-content:center}
+.ps-agwrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;align-items:stretch}
+.ps-agimg{position:relative;min-height:380px;border-radius:16px;overflow:hidden;background:#0b1a3a}
+.ps-agimg::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,16,38,.75),transparent 40%)}
+.ps-agimg-cap{position:absolute;left:18px;bottom:14px;z-index:1;color:rgba(255,255,255,.85);font-size:calc(11.5px*var(--fs));letter-spacing:.12em;font-weight:600}
+.ps-agwrap .ps-ag{padding:calc(18px*var(--fs)) 20px}
+.ps-agenda .ps-h{flex:none;margin-bottom:6px;font-size:calc(28px*var(--fs))}
+.ps-agwrap .ps-ag b{font-size:calc(20px*var(--fs))}
+.pslide.big .ps-agwrap{min-height:calc(100vh - 160px)}
+.print-root.export .ps-agwrap{min-height:900px}
+@media print{.pslide.print .ps-agwrap{min-height:170mm}}
+@media (max-width:900px){.ps-agwrap{grid-template-columns:1fr}.ps-agimg{min-height:220px}}
+.ps-ag{display:flex;gap:16px;align-items:flex-start;padding:14px 16px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line)}
+.ps-ag-n{font-size:calc(30px*var(--fs));font-weight:800;color:var(--accent);line-height:1}
+.ps-ag b{font-size:calc(18px*var(--fs))}
+.ps-ag p{margin:4px 0 0;color:var(--ink-2);font-size:calc(13.5px*var(--fs))}
+.ps-tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.ps-tiles.k3{grid-template-columns:repeat(3,1fr)}
+@media (max-width:900px){.ps-tiles,.ps-tiles.k3{grid-template-columns:repeat(2,1fr)}}
+.ps-tile{border-radius:14px;padding:12px 14px;background:color-mix(in srgb,var(--c) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 30%,var(--line))}
+.ps-tile-l{font-size:calc(12.5px*var(--fs));color:var(--ink-2);min-height:2.6em}
+.ps-tile-v{font-size:calc(30px*var(--fs));font-weight:700;color:var(--c);font-variant-numeric:tabular-nums;line-height:1.2}
+.ps-tile-v small{font-size:calc(13px*var(--fs));font-weight:600;margin-left:6px;color:var(--ink-2)}
+.ps-tile-m{font-size:calc(12px*var(--fs));font-weight:600;color:var(--c);margin-top:2px}
+.chip.cur-m{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.ps-tile-p{font-size:calc(12px*var(--fs));color:var(--muted);margin-top:2px}
+.ps-share{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.ps-share-row{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;font-size:calc(12.5px*var(--fs));color:var(--ink-2)}
+.ps-share-bar{display:flex;height:calc(22px*var(--fs));border-radius:8px;overflow:hidden;background:var(--surface-3)}
+.ps-share-bar i{display:grid;place-items:center;color:#fff;font-style:normal;font-size:calc(11.5px*var(--fs));font-weight:600}
+.ps-tbl{font-size:calc(13.5px*var(--fs))}
+.ps-tbl th span{display:block;font-size:calc(11px*var(--fs));color:var(--muted);font-weight:400;white-space:normal;max-width:130px;margin-left:auto}
+.ps-tbl td{padding:calc(7px*var(--fs)) 10px}
+.ps-tbl td.b{font-weight:600}
+.ps-tbl tr.cur td{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.ps-tbl tr.pct td{color:var(--muted);font-size:calc(12px*var(--fs));border-bottom:2px solid var(--line-2)}
+.ps-yr{font-weight:700;color:var(--accent);vertical-align:top;white-space:nowrap}
+.ps-foot{margin-top:10px;font-size:calc(12px*var(--fs));color:var(--muted)}
+.ps-sub2{display:block;font-size:calc(12.5px*var(--fs));color:var(--ink-2)}
+.ps-sub2.wrap{white-space:normal}
+.ps-issue{display:inline-block;font-weight:600;color:var(--bad-ink);background:var(--bad-soft);border-radius:6px;padding:1px 8px;margin-bottom:3px}
+.ps-tbl.issues td{vertical-align:top}
+.ps-tbl.issues th span{white-space:nowrap;max-width:none}
+.ps-prod{font-size:calc(15px*var(--fs))}
+.ps-bar{display:flex;align-items:center;gap:8px}
+.ps-bar i{display:block;height:calc(12px*var(--fs));border-radius:4px;min-width:2px}
+.ps-bar span{font-size:calc(12px*var(--fs));color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ps-notes{font-size:calc(16px*var(--fs));line-height:1.7;margin:0;padding-left:1.4em}
+
+/* Timeline (Gantt) */
+.ps-tl-sum{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.ps-tl-chip{font-size:calc(12.5px*var(--fs));padding:5px 10px;border-radius:999px;border:1px solid var(--line)}
+.ps-tl-chip.on{background:color-mix(in srgb,#1565c0 14%,var(--surface))}
+.ps-tl-chip.oh{background:color-mix(in srgb,#4fc3f7 20%,var(--surface))}
+.ps-tl-chip.hd{background:var(--bad-soft)}
+.gantt{min-width:1100px;font-size:calc(12px*var(--fs))}
+.g-row{display:grid;grid-template-columns:minmax(380px,34%) 1fr;border-bottom:1px solid var(--line);min-height:calc(24px*var(--fs))}
+.g-row.g-split{border-top:2px solid var(--line-2)}
+.g-left{display:grid;grid-template-columns:26px 82px minmax(0,1fr) 56px 56px;gap:6px;align-items:center;padding:2px 6px}
+.g-head .g-left{color:var(--muted);font-size:calc(11.5px*var(--fs))}
+.g-code{font-weight:600;white-space:nowrap;border-radius:5px;padding:0 5px;text-align:center}
+.g-code.on{background:#1565c0;color:#fff}.g-code.oh{background:#b3e5fc;color:#0b3a5c}.g-code.hd{background:#c62828;color:#fff}
+.g-name{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.g-name small{color:var(--muted);margin-left:6px}
+.g-days{display:grid;position:relative;align-items:center;border-left:1px solid var(--line-2)}
+.g-head .g-days{grid-template-rows:auto auto;align-items:end}
+.g-month{grid-row:1;text-align:center;font-weight:700;font-size:calc(13px*var(--fs));border-left:1px solid var(--line-2);background:var(--surface-2)}
+.g-dnum{grid-row:2;font-size:calc(10px*var(--fs));color:var(--muted)}
+.g-bar{grid-row:1;height:calc(14px*var(--fs));border-radius:3px;z-index:1}
+.g-bar.on{background:#1565c0}.g-bar.oh{background:#4fc3f7}.g-bar.hd{background:#c62828}
+.g-msep{grid-row:1;align-self:stretch;border-left:1px solid var(--line-2)}
+.g-today{grid-row:1;align-self:stretch;background:color-mix(in srgb,var(--warn) 35%,transparent)}
+
+/* หน้าปก: รูปหน้างานเต็มกรอบ + เงาไล่ทางซ้าย */
+.ps-hero{position:relative;overflow:hidden;border-radius:16px;aspect-ratio:16/9;max-height:560px;width:100%;background:#0b1a3a}
+.pslide.big .ps-hero{max-height:none;height:calc(100vh - 150px);aspect-ratio:auto}
+.ps-hero-img{object-fit:cover;object-position:center 60%;transform:scale(1.02)}
+.ps-hero-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,16,38,.92) 0%,rgba(6,16,38,.78) 32%,rgba(6,16,38,.25) 62%,rgba(6,16,38,0) 80%),linear-gradient(0deg,rgba(6,16,38,.55),transparent 35%)}
+.ps-hero-txt{position:absolute;left:clamp(20px,5%,72px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;color:#fff;max-width:min(620px,80%)}
+.ps-hero-txt .ps-co{color:rgba(255,255,255,.75)}
+.ps-hero-txt h2{font-size:calc(56px*var(--fs));line-height:1.05;margin:0;font-weight:800;letter-spacing:-.5px;color:#fff}
+.ps-hero-rule{width:72px;height:4px;border-radius:2px;background:#e53935}
+.ps-hero-txt .ps-date{font-size:calc(24px*var(--fs));font-weight:600;color:#fff}
+.ps-hero-txt .ps-sub{color:rgba(255,255,255,.8)}
+@media (max-width:700px){.ps-hero{aspect-ratio:4/5}.ps-hero-shade{background:linear-gradient(0deg,rgba(6,16,38,.92) 10%,rgba(6,16,38,.35) 70%)}.ps-hero-txt{top:auto;bottom:24px;transform:none}}
+
+/* โหมดนำเสนอ (เต็มจอ) */
+.present{position:fixed;inset:0;z-index:1000;background:var(--page);display:flex;flex-direction:column}
+.present.off{display:none}
+.present-body{flex:1;overflow:auto;padding:clamp(16px,3vw,48px) clamp(16px,4vw,64px)}
+.pslide.big{--fs:1.3;max-width:1700px;margin:0 auto}
+.pslide.big .gantt{--fs:1.05}
+.present-nav{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px;border-top:1px solid var(--line);background:var(--surface)}
+.present-nav .icon-btn{font-size:20px;width:38px;height:38px}
+.present-count{font-size:13px;color:var(--ink-2);min-width:240px;text-align:center}
+
+/* ดาวน์โหลด PDF ประชุมประจำเดือน: แสดงเฉพาะ .print-root (A4 แนวนอน, 1 สไลด์/หน้า, โทนสว่างเสมอ) */
+.print-root{display:none}
+@media print{
+  @page{size:A4 landscape;margin:9mm}
+  body>*:not(.print-root){display:none !important}
+  html,body{background:#fff !important}
+  .print-root{display:block;
+    --page:#ffffff; --surface:#ffffff; --surface-2:#f6f9fe; --surface-3:#ebf2fd;
+    --ink:#0b1a3a; --ink-2:#4a5878; --muted:#8793ab; --line:#e5ebf5; --line-2:#d3dcea;
+    --accent:#1d6bf3; --accent-2:#3f8cff; --accent-soft:#e8f0ff; --glow-1:#d6e6ff;
+    --good-ink:#0a7a0a; --bad-ink:#c02f2f; --bad-soft:#fde8e8;
+    color:var(--ink);background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .print-page{break-after:page;page-break-after:always;padding:0}
+  .print-page:last-child{break-after:auto;page-break-after:auto}
+  .pslide.print{--fs:.92}
+  .pslide.print .ps-hero{aspect-ratio:auto;height:178mm;max-height:none;border-radius:10px}
+  .pslide.print .ps-cover,.pslide.print .ps-divider{min-height:170mm;justify-content:center}
+  .pslide.print .tbl-wrap{overflow:visible;margin:0}
+  .pslide.print .gantt{min-width:0;--fs:.78}
+  .pslide.print .g-row{grid-template-columns:330px 1fr;break-inside:avoid}
+  .pslide.print .g-left{grid-template-columns:20px 74px minmax(0,1fr) 46px 46px}
+  .pslide.print tr{break-inside:avoid}
+  .pslide.print .ps-tiles{grid-template-columns:repeat(5,1fr)}
+  .pslide.print .ps-tiles.k3{grid-template-columns:repeat(3,1fr)}
+}
+
+/* ดาวน์โหลด PDF: วาดสไลด์นอกจอ (กว้าง 1400px สัดส่วน A4 แนวนอน) แล้วแปลงเป็นรูปทีละหน้า */
+.print-root.export{display:block;position:fixed;left:-20000px;top:0;width:1400px;pointer-events:none;
+  --page:#ffffff; --surface:#ffffff; --surface-2:#f6f9fe; --surface-3:#ebf2fd;
+  --ink:#0b1a3a; --ink-2:#4a5878; --muted:#8793ab; --line:#e5ebf5; --line-2:#d3dcea;
+  --accent:#1d6bf3; --accent-2:#3f8cff; --accent-soft:#e8f0ff; --glow-1:#d6e6ff;
+  --good-ink:#0a7a0a; --bad-ink:#c02f2f; --bad-soft:#fde8e8;
+  color:var(--ink);background:#fff}
+.print-root.export .print-page{width:1400px;min-height:990px;padding:36px 40px;box-sizing:border-box;background:#fff}
+.print-root.export .pslide.print{--fs:1.05}
+.print-root.export .ps-hero{aspect-ratio:auto;height:918px;max-height:none}
+.print-root.export .ps-cover,.print-root.export .ps-divider{min-height:900px}
+.print-root.export .tbl-wrap{overflow:visible;margin:0}
+.print-root.export .gantt{min-width:0;--fs:.95}

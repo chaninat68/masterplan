@@ -45,7 +45,7 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
     <PageHeader title="ประชุมแผนกขายประจำสัปดาห์" sub="สรุปยอดขายรายสัปดาห์ เทียบเป้า และงานที่คาดว่าจะได้ (Base / Best) · หน่วย: ล้านบาท" readOnly={!user.canEdit} right={right} />
   );
   if (!list.length)
-    return <>{header()}<div className="card"><Empty>ยังไม่มีข้อมูลประชุม — {user.canEdit ? <Link className="link" href="/import">นำเข้าไฟล์ Sales Update</Link> : "รอฝ่ายวางแผนนำเข้าไฟล์ Sales Update"}</Empty></div></>;
+    return <>{header()}<div className="card"><Empty>ยังไม่มีข้อมูลประชุม — {user.canEdit ? <Link className="link" href="/import">นำเข้าไฟล์ Sales Update</Link> : "รอส่วนงานวางแผนนำเข้าไฟล์ Sales Update"}</Empty></div></>;
 
   const sel = list.find((m) => m.meeting_date === sp.m) ?? list[0];
   const prev = list.find((m) => m.meeting_date < sel.meeting_date);

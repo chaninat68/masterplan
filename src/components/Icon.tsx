@@ -23,6 +23,7 @@ const PATHS: Record<string, string> = {
   search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14M20 20l-3.5-3.5",
   logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
   plus: "M12 5v14M5 12h14",
+  present: "M3 4h18v12H3zM12 16v4M8 20h8M10 8l4 2-4 2z",
   trash: "M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15",
 };
 
