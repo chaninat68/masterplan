@@ -85,3 +85,33 @@ export async function importStatusFile(id: string, form: FormData): Promise<Resu
   });
   return r.ok ? { ...r, labels } : r;
 }
+
+/** นำเข้าแผนการจัดส่ง (ประเภทการก่อสร้าง + เฉลี่ย/วัน + 5 ผลิตภัณฑ์) — คงชื่อโครงการของผลิตภัณฑ์เดิมไว้ */
+export async function importDeliveryFile(id: string, form: FormData): Promise<Result & { summary?: string }> {
+  let summary = "";
+  const r = await run(async (uid) => {
+    const file = form.get("file");
+    if (!(file instanceof File) || !file.size) throw new Error("เลือกไฟล์ Excel");
+    if (file.size > 10 * 1024 * 1024) throw new Error("ไฟล์ใหญ่เกิน 10 MB");
+    const { readSheets } = await import("@/lib/import/excel");
+    const { parsePlanningDelivery } = await import("@/lib/import/planningDelivery");
+    const p = parsePlanningDelivery(readSheets(await file.arrayBuffer()));
+    const supabase = await createClient();
+    const mid = z.uuid().parse(id);
+    const { data: cur } = await supabase.from("planning_meetings").select("delivery").eq("id", mid).single();
+    const old = DeliverySchema.safeParse(cur?.delivery);
+    const projectsOf = new Map((old.success ? old.data.products : []).map((x) => [x.product.toUpperCase(), x.projects]));
+    const delivery = DeliverySchema.parse({
+      rate: p.rate ?? (old.success ? old.data.rate : null),
+      by_type: p.by_type.length ? p.by_type : old.success ? old.data.by_type : [],
+      products: p.products.length
+        ? p.products.map((x) => ({ ...x, projects: projectsOf.get(x.product.toUpperCase()) ?? "" }))
+        : old.success ? old.data.products : [],
+    });
+    const { error } = await supabase.from("planning_meetings")
+      .update({ delivery, updated_by: uid, updated_at: new Date().toISOString() }).eq("id", mid);
+    if (error) throw new Error(error.message);
+    summary = `ประเภทก่อสร้าง ${p.by_type.length} แถว · ผลิตภัณฑ์ ${p.products.length} รายการ${p.rate != null ? ` · เฉลี่ย ${p.rate.toLocaleString("th-TH")} ลบ.ม./วัน` : ""}`;
+  });
+  return r.ok ? { ...r, summary } : r;
+}

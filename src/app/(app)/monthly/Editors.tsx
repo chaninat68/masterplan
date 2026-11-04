@@ -4,7 +4,7 @@ import { useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/Icon";
 import { STATUS_COLS, SERVICE_ROWS, type Delivery, type Issue, type StatusData, type StatusGrid } from "@/lib/planningMeeting";
-import { createMeeting, deleteMeeting, importStatusFile, saveSection, type Section } from "./actions";
+import { createMeeting, deleteMeeting, importDeliveryFile, importStatusFile, saveSection, type Section } from "./actions";
 
 const toNum = (s: string): number | null => {
   const t = s.replace(/,/g, "").trim();
@@ -13,6 +13,15 @@ const toNum = (s: string): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 const show = (n: number | null | undefined) => (n == null ? "" : String(n));
+
+/** state ของฟอร์มที่ตามข้อมูลจากเซิร์ฟเวอร์ (เช่น หลังนำเข้าไฟล์) — ไม่งั้นกดบันทึกจะเอาค่าเก่าทับ */
+function useSynced<T>(data: T) {
+  const sig = JSON.stringify(data);
+  const [state, setState] = useState<T>(data);
+  const [seen, setSeen] = useState(sig);
+  if (seen !== sig) { setSeen(sig); setState(data); }
+  return [state, setState] as const;
+}
 
 function useSave(id: string, section: Section) {
   const [pending, start] = useTransition();
@@ -93,7 +102,7 @@ export function DeleteMeeting({ id, label }: { id: string; label: string }) {
 
 /* ---------- หัวเรื่อง / วันที่ข้อมูล / สรุปท้าย ---------- */
 export function MetaEditor({ id, title, statusAsof, notes }: { id: string; title: string; statusAsof: string; notes: string }) {
-  const [s, setS] = useState({ title, status_asof: statusAsof, notes });
+  const [s, setS] = useSynced({ title, status_asof: statusAsof, notes });
   const { pending, msg, save } = useSave(id, "meta");
   return (
     <Panel label="แก้หัวเรื่อง / วันที่ข้อมูล / สรุปท้าย">
@@ -118,7 +127,7 @@ export function StatusEditor({ id, section, data, labels, suggest, unit }: {
   id: string; section: "status_counts" | "status_values"; data: StatusData; labels: { cur: string; prev: string };
   suggest: number[]; unit: string;
 }) {
-  const [d, setD] = useState<StatusData>(data);
+  const [d, setD] = useSynced<StatusData>(data);
   const { pending, msg, save } = useSave(id, section);
   const set = (which: "cur" | "prev", row: keyof StatusGrid, i: number, v: number | null) =>
     setD((o) => ({ ...o, [which]: { ...o[which], [row]: o[which][row].map((x, k) => (k === i ? v : x)) } }));
@@ -186,6 +195,33 @@ function ImportStatus({ id, expect }: { id: string; expect: string }) {
   );
 }
 
+/** นำเข้าไฟล์ "นำเข้าอัตราการใช้.xlsx" → เติมสไลด์แผนการจัดส่ง (ประเภทก่อสร้าง + 5 ผลิตภัณฑ์) */
+function ImportDelivery({ id }: { id: string }) {
+  const [pending, start] = useTransition();
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const router = useRouter();
+  return (
+    <>
+      <label className={`btn ghost sm${pending ? " disabled" : ""}`} title="ไฟล์ที่มีตาราง ประเภทการก่อสร้าง / 5 ผลิตภัณฑ์ (คอลัมน์ จำนวนต้น และ ลบ.ม.) + แถว เฉลี่ย/วัน">
+        <Icon name="up" size={15} />{pending ? "กำลังนำเข้า…" : "นำเข้าจาก Excel"}
+        <input type="file" accept=".xlsx,.xls" hidden disabled={pending} onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          const fd = new FormData();
+          fd.append("file", f);
+          start(async () => {
+            const r = await importDeliveryFile(id, fd);
+            setMsg(r.ok ? { ok: true, text: `นำเข้าแล้ว: ${r.summary ?? ""}` } : { ok: false, text: r.error });
+            if (r.ok) router.refresh();
+          });
+        }} />
+      </label>
+      {msg && <span className={msg.ok ? "ok-msg" : "err"} style={{ alignSelf: "center" }}>{msg.text}</span>}
+    </>
+  );
+}
+
 /* ---------- โครงการมีปัญหา ---------- */
 export type ProjectHint = { code: string; customer: string; project: string; value: number; outstanding: number; remain_qty: number; note: string; hold: boolean };
 const blankIssue = (): Issue => ({ code: "", customer: "", project: "", issue: "", detail: "", value: null, outstanding: "", remain_qty: null, timeline: "" });
@@ -199,7 +235,7 @@ function fromProject(p: ProjectHint, base: Issue = blankIssue()): Issue {
 }
 
 export function IssuesEditor({ id, data, projects }: { id: string; data: Issue[]; projects: ProjectHint[] }) {
-  const [rows, setRows] = useState<Issue[]>(data);
+  const [rows, setRows] = useSynced<Issue[]>(data);
   const { pending, msg, save } = useSave(id, "issues");
   const byCode = new Map(projects.map((p) => [p.code, p]));
   const upd = (i: number, patch: Partial<Issue>) => setRows((o) => o.map((r, k) => (k === i ? { ...r, ...patch } : r)));
@@ -251,12 +287,12 @@ export function IssuesEditor({ id, data, projects }: { id: string; data: Issue[]
 
 /* ---------- 03 แผนการจัดส่ง ---------- */
 export function DeliveryEditor({ id, data, suggestPiles }: { id: string; data: Delivery; suggestPiles: Record<string, number> }) {
-  const [d, setD] = useState<Delivery>(data);
+  const [d, setD] = useSynced<Delivery>(data);
   const { pending, msg, save } = useSave(id, "delivery");
   const updT = (i: number, p: Partial<Delivery["by_type"][number]>) => setD((o) => ({ ...o, by_type: o.by_type.map((r, k) => (k === i ? { ...r, ...p } : r)) }));
   const updP = (i: number, p: Partial<Delivery["products"][number]>) => setD((o) => ({ ...o, products: o.products.map((r, k) => (k === i ? { ...r, ...p } : r)) }));
   return (
-    <Panel label="แก้แผนการจัดส่ง">
+    <Panel label="แก้แผนการจัดส่ง" actions={<ImportDelivery id={id} />}>
       {(close) => (
         <>
           <p className="pm-hint">ลบ.ม. = หน้าตัด (ตร.ซม.) × ความยาว (ม.) × จำนวนต้น ÷ 10,000 · ปุ่ม &quot;เติมจำนวนต้นจากแผนตอก&quot; รวมเฉพาะโครงการพร้อมตอกที่มีแผนในระบบ (ไม่รวมงานส่งอย่างเดียว)</p>
