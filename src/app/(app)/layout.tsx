@@ -26,13 +26,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   }
 
   const supabase = await createClient();
-  const [{ data: bl }, { count: behind }] = await Promise.all([
-    supabase.from("v_backlog").select("asof, runway_weeks, level").maybeSingle(),
-    supabase.from("v_project_progress").select("project_code", { count: "exact", head: true })
-      .eq("status", "ongoing").eq("has_plan", true).lte("ahead_behind", -0.5),
-  ]);
+  const { data: bl } = await supabase.from("v_backlog").select("asof, runway_weeks, level").maybeSingle();
   const cfg = ROLE_CONFIG[user.role];
-  const nav = cfg.pages.map((k) => ({ ...PAGES[k], badge: k === "projects" ? behind ?? 0 : undefined }));
+  // ไม่แสดงตัวเลขแจ้งเตือนที่เมนู (ผู้ใช้สั่ง 6 พ.ย. 2569)
+  const nav = cfg.pages.map((k) => PAGES[k]);
   const lvl = bl?.level === "red" ? "bad" : bl?.level === "amber" ? "warn" : "good";
 
   return (
