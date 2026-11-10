@@ -466,6 +466,7 @@ table.ptbl{border-collapse:separate;border-spacing:0;font-variant-numeric:tabula
 .mtbl th.grp{text-align:center;border-bottom:1px solid var(--line);color:var(--ink-2);font-weight:600}
 .mtbl th .th-sub{display:block;font-size:11px;color:var(--muted);font-weight:400}
 .mtbl td.best,.mtbl th.best{background:color-mix(in srgb,var(--s1) 5%,transparent)}
+.mtbl td.next,.mtbl th.next{background:color-mix(in srgb,var(--warn) 9%,transparent)}
 .mtbl tr.total td{font-weight:700;border-top:2px solid var(--line-2);background:var(--surface-2)}
 .mtbl td,.mtbl th{padding-left:8px;padding-right:8px}
 table tr.total td{font-weight:700;border-top:2px solid var(--line-2)}

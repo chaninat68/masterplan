@@ -1,5 +1,6 @@
 import type * as XLSX from "xlsx";
 import { findSheet, num, parseDate, serialToIso, sheetRows, str, type Cell } from "./excel";
+import { nearTerm } from "../salesMeeting";
 
 // ไฟล์ "Sales Update dd-mm-yy.xlsx" ประชุมแผนกขายประจำสัปดาห์
 // * แท็บ สรุปยอด: เป้า + ยอดขายรายสัปดาห์ต่อเซลล์ (ซ้าย) และยอดขายรายเดือนตามผลิตภัณฑ์ (ขวา)
@@ -9,7 +10,7 @@ import { findSheet, num, parseDate, serialToIso, sheetRows, str, type Cell } fro
 
 export type SMCategory = "" | "base" | "best" | "lost" | "excluded" | "cancelled";
 export type SMMeeting = { meeting_date: string; period_month: string; title: string; week_labels: string[]; remain_label: string };
-export type SMPerson = { salesperson: string; sort: number; target: number; weeks: number[] };
+export type SMPerson = { salesperson: string; sort: number; target: number; weeks: number[]; next_adj: number };
 export type SMProduct = { product: string; month: string; actual: number | null; target: number | null };
 export type SMPipeline = {
   row_no: number; salesperson: string; product: string; first_quote: string | null; last_quote: string | null;
@@ -38,10 +39,10 @@ function safeDate(v: Cell): string | null {
   return !Number.isNaN(t.getTime()) && t.toISOString().slice(0, 10) === d && d >= "2000-01-01" && d <= "2100-12-31" ? d : null;
 }
 
-/** เดือนที่คาดว่าจะได้: "30 ต.ค." / "พ.ย." / "พ.ค.70" / "ม.ค. 70" — ไม่มีปี = เดือนนั้นครั้งถัดไปนับจากเดือนที่ประชุม */
+/** เดือนที่คาดว่าจะได้: "30 ต.ค." / "พ.ย." / "พ.ย. Week 2" / "พ.ค.70" / "ม.ค. 70" — ไม่มีปี = เดือนนั้นครั้งถัดไปนับจากเดือนที่ประชุม */
 export function parseExpectedMonth(v: Cell, period: string): string | null {
   if (typeof v === "number") return v > 20000 ? serialToIso(v).slice(0, 8) + "01" : null;
-  const s = str(v).replace(/[.\s]/g, "");
+  const s = str(v).replace(/week\s*\d+/gi, "").replace(/[.\s]/g, "");
   const m = s.match(/^(?:\d{1,2})?([฀-๿]+)(\d{2,4})?$/);
   if (!m) return null;
   const mi = MONTHS_ABBR.indexOf(m[1]) >= 0 ? MONTHS_ABBR.indexOf(m[1]) : MONTHS_FULL.indexOf(m[1]);
@@ -93,7 +94,7 @@ export function parseSalesMeeting(wb: XLSX.WorkBook, fileName: string, today: st
   for (let r = hr + 2; r < S.length; r++) {
     const name = str(S[r]?.[pc]);
     if (!name || name === "รวม") break;
-    people.push({ salesperson: name, sort: people.length, target: num(S[r][targetCol]) ?? 0, weeks: weekCols.map((c) => num(S[r][c]) ?? 0) });
+    people.push({ salesperson: name, sort: people.length, target: num(S[r][targetCol]) ?? 0, weeks: weekCols.map((c) => num(S[r][c]) ?? 0), next_adj: remainCol >= 0 ? num(S[r][remainCol]) ?? 0 : 0 });
   }
   if (!people.length) throw new Error("แท็บสรุปยอด: ไม่พบรายชื่อเซลล์");
 
@@ -164,10 +165,18 @@ export function parseSalesMeeting(wb: XLSX.WorkBook, fileName: string, today: st
     });
   }
 
+  // ช่องประมาณการสัปดาห์ในไฟล์ = Σ งาน Base ที่ระบุสัปดาห์/วัน + ตัวเลขที่พิมพ์เพิ่ม → เก็บเฉพาะส่วนที่พิมพ์เพิ่ม
+  for (const p of people) {
+    const adj = p.next_adj - nearTerm(pipeline.filter((x) => x.salesperson === p.salesperson), period);
+    p.next_adj = Math.abs(adj) < 1 ? 0 : Math.round(adj * 100) / 100;
+  }
+  const remainWeek = remainCol >= 0 ? H[remainCol].match(/สัปดาห์ที่(\d+)/) : null;
+  const remainRange = remainCol >= 0 ? H2[remainCol] : "";
+
   return {
     meeting: {
       meeting_date: meetingDate, period_month: period, title,
-      week_labels: weekCols.map((c) => H2[c] ?? ""), remain_label: remainCol >= 0 ? H2[remainCol] : "",
+      week_labels: weekCols.map((c) => H2[c] ?? ""), remain_label: remainWeek ? `สัปดาห์ที่ ${remainWeek[1]} (${remainRange})` : remainRange,
     },
     people, products: [...products.values()], pipeline, warnings,
   };

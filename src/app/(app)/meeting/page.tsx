@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requirePage } from "@/lib/auth";
 import { createClient, fetchAll } from "@/lib/supabase/server";
 import { fDate, fMonth, fNum } from "@/lib/format";
-import { addMonths, CATEGORY_LABEL, fM, forecast } from "@/lib/salesMeeting";
+import { addMonths, CATEGORY_LABEL, fM, forecast, nearTerm } from "@/lib/salesMeeting";
 import { CardHead, Empty, Kpi, PageHeader } from "@/components/ui";
 import { InlineEdit } from "@/components/InlineEdit";
 import { SalesTarget } from "@/components/charts";
@@ -13,7 +13,7 @@ import { AddItem, DeleteItem, MeetingPicker } from "./MeetingControls";
 export const metadata: Metadata = { title: "ประชุมแผนกขาย" };
 
 type Meeting = { id: string; meeting_date: string; period_month: string; title: string; week_labels: string[]; remain_label: string };
-type Person = { salesperson: string; sort: number; target: number; weeks: number[] };
+type Person = { salesperson: string; sort: number; target: number; weeks: number[]; next_adj: number };
 type ProductMonth = { product: string; month: string; actual: number | null; target: number | null };
 type Item = {
   id: number; salesperson: string; product: string; first_quote: string | null; last_quote: string | null; customer: string;
@@ -53,13 +53,13 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
   const canEdit = user.canEdit && latest; // ประชุมครั้งก่อนๆ = ประวัติ ดูอย่างเดียว
 
   const [peopleRes, prodRes, items, prevItems, prevPeopleRes] = await Promise.all([
-    supabase.from("sales_meeting_people").select("salesperson, sort, target, weeks").eq("meeting_id", sel.id).order("sort"),
+    supabase.from("sales_meeting_people").select("salesperson, sort, target, weeks, next_adj").eq("meeting_id", sel.id).order("sort"),
     supabase.from("sales_product_months").select("product, month, actual, target").eq("meeting_id", sel.id),
     fetchAll<Item>((a, b) => supabase.from("sales_pipeline").select(ITEM_COLS).eq("meeting_id", sel.id).order("id").range(a, b)),
     prev ? fetchAll<Item>((a, b) => supabase.from("sales_pipeline").select(ITEM_COLS).eq("meeting_id", prev.id).order("id").range(a, b)) : Promise.resolve([] as Item[]),
     prev ? supabase.from("sales_meeting_people").select("salesperson, sort, target, weeks").eq("meeting_id", prev.id) : Promise.resolve({ data: [] as Person[] }),
   ]);
-  const people = ((peopleRes.data ?? []) as Person[]).map((p) => ({ ...p, target: num(p.target), weeks: (p.weeks ?? []).map(num) }));
+  const people = ((peopleRes.data ?? []) as Person[]).map((p) => ({ ...p, target: num(p.target), weeks: (p.weeks ?? []).map(num), next_adj: num(p.next_adj) }));
   const products = ((prodRes.data ?? []) as ProductMonth[]).map((p) => ({ ...p, actual: p.actual == null ? null : num(p.actual), target: p.target == null ? null : num(p.target) }));
   const pipeline = items.map((x) => ({ ...x, value: num(x.value) }));
 
@@ -70,12 +70,18 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
 
   // สรุปรายเซลล์
   const rows = people.map((p) => {
-    const mtd = sum(p.weeks);
-    return { ...p, mtd, fc: forecast(pipeline.filter((x) => x.salesperson === p.salesperson), period, mtd) };
+    const mtd = sum(p.weeks), mine = pipeline.filter((x) => x.salesperson === p.salesperson);
+    return { ...p, mtd, next: nearTerm(mine, period, p.next_adj), fc: forecast(mine, period, mtd, 3, p.next_adj) };
   });
   const tMtd = sum(rows.map((r) => r.mtd)), tTarget = sum(rows.map((r) => r.target));
-  const tFc = forecast(pipeline, period, tMtd);
+  const tAdj = sum(rows.map((r) => r.next_adj));
+  const tFc = forecast(pipeline, period, tMtd, 3, tAdj);
+  const tNext = nearTerm(pipeline, period, tAdj);
+  // แสดงเฉพาะสัปดาห์ที่มียอดขายแล้ว (ผู้ใช้สั่ง 6 พ.ย. 2569) + ช่องประมาณการสัปดาห์ถัดไปจากไฟล์
   const weekCount = Math.max(sel.week_labels.length, ...people.map((p) => p.weeks.length));
+  const shownWeeks = Array.from({ length: weekCount }, (_, i) => i).filter((i) => rows.some((r) => r.weeks[i]));
+  if (!shownWeeks.length && weekCount) shownWeeks.push(0);
+  const hasNext = !!sel.remain_label;
   const prevMtd = prev && prev.period_month === period ? sum(((prevPeopleRes.data ?? []) as Person[]).flatMap((p) => (p.weeks ?? []).map(num))) : null;
 
   // ตามผลิตภัณฑ์ / รายเดือน
@@ -161,18 +167,19 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
       </div>
 
       <div className="card mb">
-        <CardHead title={sel.title || `สรุปยอดขาย ${mLabel(period)}`} sub={`ยอดขายรายสัปดาห์ต่อเซลล์ และประมาณการ — Base = ยอดขาย + งาน Base · Best = Base + งาน Best${periodTarget != null ? ` · เป้าบริษัทเดือนนี้ ${fM(periodTarget)} ล้าน` : ""}`} />
+        <CardHead title={sel.title || `สรุปยอดขาย ${mLabel(period)}`} sub={`ยอดขายรายสัปดาห์ต่อเซลล์ (แสดงเฉพาะสัปดาห์ที่มียอด) และประมาณการ — Base = ยอดขาย + งาน Base (รวมประมาณการสัปดาห์) · Best = Base + งาน Best${periodTarget != null ? ` · เป้าบริษัทเดือนนี้ ${fM(periodTarget)} ล้าน` : ""}`} />
         <div className="tbl-wrap">
           <table className="mtbl">
             <thead>
               <tr>
                 <th rowSpan={2}>พนักงาน</th><th rowSpan={2} className="num">เป้า</th>
-                <th colSpan={weekCount} className="grp">ยอดขายรายสัปดาห์</th>
+                <th colSpan={shownWeeks.length} className="grp">ยอดขายรายสัปดาห์</th>
                 <th rowSpan={2} className="num">ยอดขาย<br />เดือนนี้</th><th rowSpan={2}>% เป้า</th>
+                {hasNext && <th rowSpan={2} className="num next">ประมาณการ<span className="th-sub">{sel.remain_label}</span></th>}
                 {months.map((m) => <th key={m} colSpan={2} className="grp">ประมาณการ {mLabel(m)}</th>)}
               </tr>
               <tr>
-                {Array.from({ length: weekCount }, (_, i) => <th key={i} className="num">ส.{i + 1}<span className="th-sub">{sel.week_labels[i] ?? ""}</span></th>)}
+                {shownWeeks.map((i) => <th key={i} className="num">ส.{i + 1}<span className="th-sub">{sel.week_labels[i] ?? ""}</span></th>)}
                 {months.map((m) => [<th key={m + "b"} className="num">Base</th>, <th key={m + "t"} className="num best">Best</th>])}
               </tr>
             </thead>
@@ -181,16 +188,18 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
                 <tr key={r.salesperson}>
                   <td className="nowrap"><Link className="code" href={qs({ p: r.salesperson, tab: "active" }) + "#pipeline"}>{r.salesperson}</Link></td>
                   <td className="num muted">{r.target ? fM(r.target) : "–"}</td>
-                  {Array.from({ length: weekCount }, (_, i) => <td key={i} className="num">{r.weeks[i] ? fM(r.weeks[i]) : <span className="muted">–</span>}</td>)}
+                  {shownWeeks.map((i) => <td key={i} className="num">{r.weeks[i] ? fM(r.weeks[i]) : <span className="muted">–</span>}</td>)}
                   <td className="num"><b>{fM(r.mtd)}</b></td>
                   <td>{r.target ? <Pct a={r.mtd} b={r.target} /> : <span className="muted">–</span>}</td>
+                  {hasNext && <td className="num next">{r.next ? fM(r.next) : <span className="muted">–</span>}</td>}
                   {r.fc.map((f) => [<td key={f.month + "b"} className="num">{f.base ? fM(f.base) : <span className="muted">–</span>}</td>, <td key={f.month + "t"} className="num best">{f.best ? fM(f.best) : <span className="muted">–</span>}</td>])}
                 </tr>
               ))}
               <tr className="total">
                 <td>รวม</td><td className="num">{fM(tTarget)}</td>
-                {Array.from({ length: weekCount }, (_, i) => <td key={i} className="num">{fM(sum(rows.map((r) => r.weeks[i] ?? 0)))}</td>)}
+                {shownWeeks.map((i) => <td key={i} className="num">{fM(sum(rows.map((r) => r.weeks[i] ?? 0)))}</td>)}
                 <td className="num">{fM(tMtd)}</td><td><Pct a={tMtd} b={tTarget} /></td>
+                {hasNext && <td className="num next">{fM(tNext)}</td>}
                 {tFc.map((f) => [<td key={f.month + "b"} className="num">{fM(f.base)}</td>, <td key={f.month + "t"} className="num best">{fM(f.best)}</td>])}
               </tr>
             </tbody>
