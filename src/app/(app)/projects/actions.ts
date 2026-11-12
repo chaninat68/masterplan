@@ -66,6 +66,30 @@ export async function setPlanDay(code: string, date: string, value: string): Pro
   }, [`/projects/${code}`]);
 }
 
+const PlanRange = z.object({
+  code: Code, from: DateIso, to: DateIso, qty: Qty, skipSun: z.boolean(),
+}).refine((x) => x.from <= x.to, "วันเริ่มต้องไม่เกินวันสิ้นสุด")
+  .refine((x) => (Date.parse(x.to) - Date.parse(x.from)) / 86400000 <= 366, "ช่วงวันที่ยาวเกิน 1 ปี");
+
+/** ใส่แผนทั้งช่วงวันที่ (ต้น/วัน เท่ากัน) — 0 = ลบแผนช่วงนั้น, ข้ามวันอาทิตย์ได้ */
+export async function setPlanRange(input: z.input<typeof PlanRange>): Promise<ActionResult> {
+  return run(async () => {
+    const x = PlanRange.parse(input);
+    const supabase = await createClient();
+    const dates: string[] = [];
+    for (let t = Date.parse(x.from); t <= Date.parse(x.to); t += 86400000) {
+      const d = new Date(t);
+      if (x.skipSun && d.getUTCDay() === 0) continue;
+      dates.push(d.toISOString().slice(0, 10));
+    }
+    if (!dates.length) throw new Error("ไม่มีวันในช่วงที่เลือก");
+    const res = x.qty > 0
+      ? await supabase.from("project_plan_days").upsert(dates.map((d) => ({ project_code: x.code, plan_date: d, planned_qty: x.qty })), { onConflict: "project_code,plan_date" })
+      : await supabase.from("project_plan_days").delete().eq("project_code", x.code).in("plan_date", dates);
+    if (res.error) throw new Error(res.error.message);
+  }, [`/projects/${input.code}`]);
+}
+
 /** หมายเหตุรายวัน: code ว่าง = ทั้งบริษัท, ข้อความว่าง = ลบ */
 export async function setNote(code: string | null, date: string, body: string): Promise<ActionResult> {
   return run(async () => {

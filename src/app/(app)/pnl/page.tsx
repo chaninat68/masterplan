@@ -62,6 +62,10 @@ export default async function PnlPage() {
   const piles = rows.reduce((s, r) => s + (r.piles ?? 0), 0);
   const cvSum = rows.reduce((s, r) => s + (r.contract_value ?? 0), 0);
   const cvCount = rows.filter((r) => r.contract_value != null).length;
+  // ราคาเฉลี่ย บาท/ลบ.ม. ภาพรวม = รายได้รวม ÷ ปริมาณรวม (เฉพาะโครงการที่มีปริมาณ ลบ.ม. — สูตรเดียวกับชิปรายโครงการ)
+  const volRows = rows.filter((r) => (r.volume ?? 0) > 0);
+  const volume = volRows.reduce((s, r) => s + (r.volume ?? 0), 0);
+  const perM3 = volume > 0 ? volRows.reduce((s, r) => s + revenueOf(r.lines), 0) / volume : null;
 
   // ปีของโครงการ (จากรหัส) เรียงเก่า→ใหม่
   const years = [...new Set(rows.map((r) => yearOf(r.project_code) || "อื่นๆ"))].sort((a, b) => (a === "อื่นๆ" ? 1 : b === "อื่นๆ" ? -1 : a.localeCompare(b)));
@@ -96,7 +100,7 @@ export default async function PnlPage() {
   ];
 
   const kpis = [
-    { label: "รายได้รวม", value: M(revenue), unit: "ล้าน", icon: "coin", tone: "teal", sub: <>ขาย {M(t.sale)} · ตอก {M(t.drive_price)} · บริการ {M(t.svc_price)}<br />มูลค่าโครงการ ก่อน VAT {M(cvSum / 1.07)} ล้าน ({cvCount}/{rows.length} โครงการที่มีใน Master Planning)</> },
+    { label: "รายได้รวม", value: M(revenue), unit: "ล้าน", icon: "coin", tone: "teal", sub: <>ขาย {M(t.sale)} · ตอก {M(t.drive_price)} · บริการ {M(t.svc_price)}<br />ราคาเฉลี่ย <b>{perM3 != null ? `฿${perM3.toLocaleString("th-TH", { maximumFractionDigits: 0 })}` : "–"}</b> บาท/ลบ.ม. ({volume.toLocaleString("th-TH", { maximumFractionDigits: 0 })} ลบ.ม.{volRows.length < rows.length ? ` · ${volRows.length}/${rows.length} โครงการที่มีปริมาณ` : ""})<br />มูลค่าโครงการ ก่อน VAT {M(cvSum / 1.07)} ล้าน ({cvCount}/{rows.length} โครงการที่มีใน Master Planning)</> },
     { label: "กำไรขั้นต้น (Gross Profit)", value: M(t.gross), unit: "ล้าน", icon: "trend", tone: "orange", sub: <><b className="up">{P(ratio(t.gross, t.sale))}</b> ของราคาขายเสาเข็ม</> },
     { label: "กำไรจากการดำเนินงาน", value: M(t.operating), unit: "ล้าน", icon: "pie", tone: "teal", sub: <><b className="up">{P(ratio(t.operating, revenue))}</b> ของรายได้รวม</> },
     { label: "กำไรสุทธิ (Net Profit)", value: M(t.net), unit: "ล้าน", icon: "money", tone: "orange", sub: <><b className={(t.net ?? 0) >= 0 ? "up" : "down"}>{P(ratio(t.net, revenue))}</b> · ขาดทุน {loss.length} จาก {rows.length} โครงการ</> },
