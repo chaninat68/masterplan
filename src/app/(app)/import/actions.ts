@@ -9,10 +9,12 @@ import { parseQueue } from "@/lib/import/queue";
 import { parseMasterPlanning } from "@/lib/import/masterPlanning";
 import { parseSales } from "@/lib/import/sales";
 import { parseSalesMeeting } from "@/lib/import/salesMeeting";
+import { parsePnl } from "@/lib/import/pnl";
+import { revenueOf } from "@/lib/pnl";
 import { CATEGORY_LABEL, fM } from "@/lib/salesMeeting";
 import { fDate, todayBangkok } from "@/lib/format";
 
-export type Kind = "queue" | "master_planning" | "sales" | "sales_meeting";
+export type Kind = "queue" | "master_planning" | "sales" | "sales_meeting" | "pnl";
 export type Preview = {
   ok: true; kind: Kind; fileName: string;
   stats: { label: string; value: number; tone?: "new" | "dup" | "err" | "warn" }[];
@@ -22,7 +24,7 @@ export type Preview = {
 } | { ok: false; error: string };
 export type CommitResult = { ok: true; message: string } | { ok: false; error: string };
 
-const KindSchema = z.enum(["queue", "master_planning", "sales", "sales_meeting"]);
+const KindSchema = z.enum(["queue", "master_planning", "sales", "sales_meeting", "pnl"]);
 const MAX = 40 * 1024 * 1024;
 
 async function readFile(formData: FormData) {
@@ -95,6 +97,26 @@ export async function previewImport(kindRaw: string, formData: FormData): Promis
         note: `ข้อมูลโครงการ และแผนรายวันช่วง ${r.dateFrom} ถึง ${r.dateTo} ของโครงการในไฟล์จะถูกแทนที่ด้วยไฟล์นี้${r.hasActual ? "" : " · ไฟล์ไม่มีแถว Actual: ผลงานจริงยังใช้จากไฟล์คิว-วัน"} (หมายเหตุที่พิมพ์ในเว็บจะไม่ถูกทับ)`,
       };
     }
+    if (kind === "pnl") {
+      const r = parsePnl(readSheets(buf));
+      const mb = (n: number | undefined) => Math.round(((n ?? 0) / 1e6) * 100) / 100;
+      const loss = r.projects.filter((p) => (p.lines.net ?? 0) < 0).length;
+      return {
+        ok: true, kind, fileName: name,
+        stats: [
+          { label: "โครงการ", value: r.projects.length, tone: "new" },
+          { label: "กำไร", value: r.projects.length - loss },
+          { label: "ขาดทุน", value: loss, tone: loss ? "err" : undefined },
+          { label: "ไม่มีรหัสโครงการ", value: r.projects.filter((p) => !p.project_code).length, tone: "warn" },
+        ],
+        sample: r.projects.map((p) => ({
+          ลำดับ: p.sort, รหัส: p.ref_text, ลูกค้า: p.customer, โครงการ: p.project, ต้น: p.piles ?? "",
+          "รายได้ (ล้าน)": mb(revenueOf(p.lines)), "กำไรขั้นต้น (ล้าน)": mb(p.lines.gross), "กำไรสุทธิ (ล้าน)": mb(p.lines.net),
+        })),
+        errors: r.warnings.slice(0, 50),
+        note: `แท็บ ${r.sheet} · ข้อมูลชุดนี้จะแสดงในหน้า Profit and Loss แทนชุดเดิม (ย้อนกลับได้)`,
+      };
+    }
     if (kind === "sales_meeting") {
       const r = parseSalesMeeting(readSheets(buf), name, todayBangkok());
       const { data: old } = await supabase.from("sales_meetings").select("id").eq("meeting_date", r.meeting.meeting_date).maybeSingle();
@@ -154,6 +176,11 @@ export async function commitImport(kindRaw: string, formData: FormData): Promise
       });
       if (error) throw new Error(error.message);
       message = `อัพเดท ${data.projects} โครงการ · แผน ${Number(data.plans).toLocaleString("th-TH")} วัน · หมายเหตุใหม่ ${data.notes}`;
+    } else if (kind === "pnl") {
+      const r = parsePnl(readSheets(buf));
+      const { data, error } = await supabase.rpc("import_pnl", { p_file_name: name, p_params: r.params, p_projects: r.projects });
+      if (error) throw new Error(error.message);
+      message = `บันทึก Profit and Loss ${data.projects} โครงการ — หน้า Profit and Loss แสดงข้อมูลชุดนี้แล้ว`;
     } else if (kind === "sales_meeting") {
       const r = parseSalesMeeting(readSheets(buf), name, todayBangkok());
       const { data, error } = await supabase.rpc("import_sales_meeting", {

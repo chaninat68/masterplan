@@ -732,3 +732,114 @@ table.tl{border-collapse:separate;border-spacing:0;width:max-content;font-size:1
 }
 
 .tl-pdf[disabled]{opacity:.7;cursor:progress}
+
+/* ---------- Profit and Loss (/pnl) — โทนเขียวเข้ม/ส้ม ตามรูปตัวอย่างของผู้ใช้ (12 พ.ย. 2569) ---------- */
+.pnl{
+  --p-teal:#0f5f5a; --p-teal-2:#2f8f87; --p-aqua:#4fc3bb; --p-orange:#f2711c; --p-orange-2:#f9a061; --p-sand:#c9b79c;
+  --p-teal-soft:#e2f1ef; --p-orange-soft:#fdeee3; --p-aqua-soft:#e1f6f4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .pnl{
+    --p-teal:#2fa59c; --p-teal-2:#5fc0b6; --p-aqua:#7ad8d0; --p-orange:#ff8a3d; --p-orange-2:#ffb27a; --p-sand:#a8987f;
+    --p-teal-soft:#123330; --p-orange-soft:#3a2414; --p-aqua-soft:#14322f;
+  }
+}
+:root[data-theme="dark"] .pnl{
+  --p-teal:#2fa59c; --p-teal-2:#5fc0b6; --p-aqua:#7ad8d0; --p-orange:#ff8a3d; --p-orange-2:#ffb27a; --p-sand:#a8987f;
+  --p-teal-soft:#123330; --p-orange-soft:#3a2414; --p-aqua-soft:#14322f;
+}
+.pnl .link{color:var(--p-teal)}
+.pnl .pos{color:var(--p-teal);font-weight:600}.pnl .neg{color:var(--p-orange);font-weight:600}
+.pnl-btn{background:var(--p-teal)!important;box-shadow:0 4px 12px color-mix(in srgb,var(--p-teal) 25%,transparent)!important;list-style:none}
+.pnl-btn::-webkit-details-marker{display:none}
+.pnl-import{margin-bottom:18px}
+.pnl-import-body{margin-top:12px}
+.pnl-ic{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;flex:none;color:#fff}
+.pnl-ic svg{width:22px;height:22px}
+.pnl-ic.sm{width:36px;height:36px;border-radius:10px}.pnl-ic.sm svg{width:18px;height:18px}
+.pnl-ic.teal{background:var(--p-teal)}.pnl-ic.orange{background:var(--p-orange)}.pnl-ic.aqua{background:var(--p-aqua)}
+/* KPI แถวบน: การ์ดเดียวแบ่ง 4 ช่อง */
+.pnl-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;padding:20px 8px}
+.pnl-kpi{display:flex;gap:14px;align-items:flex-start;padding:0 18px;border-left:1px solid var(--line)}
+.pnl-kpi:first-child{border-left:0}
+.pnl-kpi .lbl{color:var(--ink-2);font-size:13px}
+.pnl-kpi .val{font-size:27px;font-weight:700;line-height:1.2;margin:2px 0;font-variant-numeric:tabular-nums}
+.pnl-kpi .val small{font-size:13px;font-weight:500;color:var(--muted);margin-left:5px}
+.pnl-kpi .cmp{font-size:12.5px;color:var(--muted)}
+.pnl-kpi .up{color:var(--p-teal)}.pnl-kpi .down{color:var(--p-orange)}
+/* การ์ด 3 ส่วน */
+.pnl-sec{border-top:3px solid var(--p-teal)}
+.pnl-sec.orange{border-top-color:var(--p-orange)}.pnl-sec.aqua{border-top-color:var(--p-aqua)}
+.pnl-sec-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.pnl-sec-h b{font-size:15px}.pnl-sec-h .link{margin-left:auto;font-size:12.5px}
+.pnl-sec.orange .pnl-sec-h .link{color:var(--p-orange)}
+.pnl-sec .lbl{color:var(--ink-2);font-size:13px}
+.pnl-sec .big{font-size:28px;font-weight:700;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.pnl-sec .big small{font-size:13px;font-weight:500;color:var(--muted)}
+.pnl .pill{font-size:12.5px;font-weight:600;border-radius:99px;padding:1px 9px;margin-left:6px}
+.pnl .pill.g{background:var(--p-teal-soft);color:var(--p-teal)}.pnl .pill.r{background:var(--p-orange-soft);color:var(--p-orange)}.pnl .pill.c{background:var(--p-aqua-soft);color:var(--p-teal-2)}
+.pnl-mini{height:150px;margin:10px 0 6px}
+.pnl-rows{border-top:1px solid var(--line);padding-top:6px}
+.pnl-rows div{display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:13px;border-bottom:1px solid var(--line)}
+.pnl-rows span{color:var(--ink-2)}.pnl-rows b{font-variant-numeric:tabular-nums}
+.pnl-top{display:flex;justify-content:space-between;gap:10px;padding-top:12px;font-size:13px}
+.pnl-top span{color:var(--ink-2);white-space:nowrap}.pnl-top b{text-align:right}
+.pnl-top b.teal{color:var(--p-teal)}.pnl-top b.orange{color:var(--p-orange)}.pnl-top b.aqua{color:var(--p-teal-2)}
+/* กราฟรายโครงการ + อันดับ */
+.pnl-legend{display:flex;gap:16px;font-size:12.5px;color:var(--ink-2);margin-top:6px}
+.pnl-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.pnl-legend i.teal{background:var(--p-teal)}.pnl-legend i.orange{background:var(--p-orange)}
+.pnl-rank{grid-template-columns:1fr 1fr;gap:18px;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.pnl-rank .lbl{font-size:12.5px;color:var(--muted);margin-bottom:4px}
+.pnl-rank .rk{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0}
+.pnl-rank .rk span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.pnl-rank .rk b{font-variant-numeric:tabular-nums}
+/* โดนัท */
+.pnl-donut{display:grid;gap:18px;justify-items:center}
+.pnl-donut .dring{position:relative;width:230px;height:230px}
+.pnl-donut .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none}
+.pnl-donut .mid b{font-size:24px;font-variant-numeric:tabular-nums}.pnl-donut .mid span{font-size:12px;color:var(--muted)}
+.pnl-donut .legend{width:100%;display:grid;gap:8px}
+.pnl-donut .legend div{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:center;font-size:13px}
+.pnl-donut .legend i{width:12px;height:12px;border-radius:4px}
+.pnl-donut .legend b{font-variant-numeric:tabular-nums;white-space:nowrap}.pnl-donut .legend small{color:var(--muted);font-weight:500}
+/* งบกำไรขาดทุน */
+.pnl-stmt{width:100%}
+.pnl-stmt td,.pnl-stmt th{padding:6px 10px}
+.pnl-stmt tr.lv1 td:first-child{padding-left:22px}
+.pnl-stmt tr.lv2 td:first-child{padding-left:38px;color:var(--ink-2)}
+.pnl-stmt tr.lv2 td{font-size:12.5px}
+.pnl-stmt tr.rev td{font-weight:600}
+.pnl-stmt tr.profit td{font-weight:700;background:var(--p-teal-soft)}
+.pnl-stmt tr.profit td:first-child{color:var(--p-teal)}
+.pnl-params{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
+.pnl-params div{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--line)}
+.pnl-params span{color:var(--ink-2)}.pnl-params b{font-variant-numeric:tabular-nums}
+/* ตารางรายโครงการ */
+.pnl-search{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 12px;min-width:240px;outline:0}
+.pnl-search:focus{border-color:var(--p-teal)}
+.pnl .seg button.on{color:var(--p-teal)}
+.pnl-tbl th.sortable{cursor:pointer;user-select:none}
+.pnl-tbl tr.row{cursor:pointer}
+.pnl-tbl tr.row:hover td,.pnl-tbl tr.row.open td{background:var(--p-teal-soft)}
+.pnl-tbl td.pj{min-width:260px}
+.pnl-tbl td.pj .sub{color:var(--muted);font-size:12px}
+.pnl-tbl td.b{font-weight:700}
+.pnl-tbl .pbar{display:inline-block;width:64px;height:6px;border-radius:99px;background:var(--line);margin-right:8px;vertical-align:middle;overflow:hidden}
+.pnl-tbl .pbar i{display:block;height:100%;border-radius:99px;background:var(--p-teal)}
+.pnl-tbl .pbar i.neg{background:var(--p-orange)}
+.pnl-tbl tr.detail>td{background:var(--surface-2);padding:14px 16px}
+.pnl-detail .facts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.pnl-detail .pnl-stmt{max-width:640px}
+@media (max-width:1200px){.pnl-kpis{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:18px}.pnl-kpi:nth-child(3){border-left:0}}
+@media (max-width:640px){
+  .pnl-kpis{grid-template-columns:1fr}.pnl-kpi{border-left:0;padding:0 10px}
+  .pnl-rank,.pnl-params{grid-template-columns:1fr}
+  .pnl-search{min-width:0;width:100%}
+}
+.pnl-rank{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.pnl-rank>div{min-width:0}
+.pnl .recharts-wrapper,.pnl .recharts-surface,.pnl .recharts-wrapper *:focus{outline:none}
+@media (max-width:640px){.pnl-rank{grid-template-columns:minmax(0,1fr)}}
+.pnl-diff{display:inline-block;font-size:12px;font-weight:600;border-radius:6px;padding:0 7px;white-space:nowrap}
+.pnl-diff.g{background:var(--p-teal-soft);color:var(--p-teal)}.pnl-diff.r{background:var(--p-orange-soft);color:var(--p-orange)}
+.pnl-detail .pnl-stmt{max-width:860px}

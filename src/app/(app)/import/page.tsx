@@ -9,7 +9,7 @@ import { UndoButton } from "./UndoButton";
 
 export const metadata: Metadata = { title: "นำเข้าไฟล์" };
 
-const KIND_LABEL = { queue: "คิว-วัน", master_planning: "Master Planning", sales: "SO", sales_meeting: "ประชุมแผนกขาย" } as const;
+const KIND_LABEL = { queue: "คิว-วัน", master_planning: "Master Planning", sales: "SO", sales_meeting: "ประชุมแผนกขาย", pnl: "Profit and Loss" } as const;
 
 export default async function ImportPage() {
   const user = await requirePage("import");
@@ -52,7 +52,7 @@ export default async function ImportPage() {
                     <td className="num">{b.rows_duplicate.toLocaleString("th-TH")}</td>
                     <td className="num tag-err">{b.rows_error}</td>
                     <td>{b.undone_at ? <span className="dc n">ย้อนกลับแล้ว</span> : <span className="dc g">สำเร็จ</span>}</td>
-                    <td>{user.canEdit && !b.undone_at && (b.kind === "queue" || b.kind === "sales_meeting") && <UndoButton id={b.id} />}</td>
+                    <td>{user.canEdit && !b.undone_at && (b.kind === "queue" || b.kind === "sales_meeting" || b.kind === "pnl") && <UndoButton id={b.id} />}</td>
                   </tr>
                 ))}
               </tbody>

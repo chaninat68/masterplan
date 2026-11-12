@@ -26,6 +26,10 @@ const PATHS: Record<string, string> = {
   gantt: "M3 4v16h18M7 7h6M9 11h8M6 15h5M13 15h4",
   present: "M3 4h18v12H3zM12 16v4M8 20h8M10 8l4 2-4 2z",
   trash: "M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15",
+  pie: "M21 12a9 9 0 1 1-9-9v9zM15 2.5A9 9 0 0 1 21.5 9H15z",
+  truck: "M2 6h12v10H2zM14 9h4l4 4v3h-8M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4M18 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4",
+  factory: "M2 21V10l6 4V10l6 4V4h8v17zM6 17h2M12 17h2M18 17h2",
+  coin: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M15 9h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9M12 6v2M12 17v2",
 };
 
 export function Icon({ name, size }: { name: string; size?: number }) {

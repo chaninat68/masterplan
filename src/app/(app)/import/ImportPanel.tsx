@@ -10,11 +10,12 @@ const KINDS: { kind: Kind; title: string; desc: string }[] = [
   { kind: "master_planning", title: "Master Planning", desc: "แท็บ Pile — ข้อมูลโครงการ + แผนรายวัน (ใช้ตอนเริ่มระบบ หรือเมื่ออัพเดทแผนใน Excel)" },
   { kind: "sales", title: "ข้อมูล SO และใบเปลี่ยนแปลง", desc: "แท็บ dataรวม — เอกสารขาย P / R / C และลูกค้า" },
   { kind: "sales_meeting", title: "ประชุมแผนกขาย (Sales Update)", desc: "ไฟล์ Sales Update dd-mm-yy.xlsx ทุกสัปดาห์ — ยอดขายรายสัปดาห์ เป้า และงาน Base / Best (วันที่ประชุมซ้ำ = แทนที่ของเดิม)" },
+  { kind: "pnl", title: "Profit and Loss", desc: "ไฟล์ Profit and Loss.xlsx (แท็บ TS) — กำไรขาดทุนรายโครงการ นำเข้าแล้วแทนชุดเดิมในหน้า Profit and Loss (ย้อนกลับได้)" },
 ];
 
-export function ImportPanel() {
+export function ImportPanel({ only }: { only?: Kind } = {}) {
   const router = useRouter();
-  const [kind, setKind] = useState<Kind>("queue");
+  const [kind, setKind] = useState<Kind>(only ?? "queue");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
@@ -50,13 +51,13 @@ export function ImportPanel() {
 
   return (
     <div className="card">
-      <div className="seg" style={{ marginBottom: 14 }}>
+      {!only && <div className="seg" style={{ marginBottom: 14 }}>
         {KINDS.map((k) => (
           <button key={k.kind} type="button" className={kind === k.kind ? "on" : ""} onClick={() => { setKind(k.kind); setPreview(null); setFile(null); setResult(null); }}>
             {k.title}
           </button>
         ))}
-      </div>
+      </div>}
       <p className="sub" style={{ marginTop: 0 }}>{KINDS.find((k) => k.kind === kind)!.desc}</p>
       <label
         className={`drop ${over ? "over" : ""}`}
