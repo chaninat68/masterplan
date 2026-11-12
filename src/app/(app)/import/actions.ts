@@ -176,6 +176,7 @@ export async function commitImport(kindRaw: string, formData: FormData): Promise
       });
       if (error) throw new Error(error.message);
       message = `อัพเดท ${data.projects} โครงการ · แผน ${Number(data.plans).toLocaleString("th-TH")} วัน · หมายเหตุใหม่ ${data.notes}`;
+      message += await syncSalesOrder(supabase);
     } else if (kind === "pnl") {
       const r = parsePnl(readSheets(buf));
       const { data, error } = await supabase.rpc("import_pnl", { p_file_name: name, p_params: r.params, p_projects: r.projects });
@@ -195,12 +196,20 @@ export async function commitImport(kindRaw: string, formData: FormData): Promise
       });
       if (error) throw new Error(error.message);
       message = `บันทึกเอกสารขาย ${Number(data.added).toLocaleString("th-TH")} รายการ (แทนที่ของเดิม ${data.replaced})`;
+      message += await syncSalesOrder(supabase);
     }
     revalidatePath("/", "layout");
     return { ok: true, message };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "บันทึกไม่สำเร็จ" };
   }
+}
+
+/** ยอดสั่งซื้อ/มูลค่าโครงการตามใบ P−R−C (โครงการปีเดียวกับไฟล์ SO ที่มีใบ P) — เรียกหลังนำเข้า SO / Master Planning */
+async function syncSalesOrder(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string> {
+  const { data, error } = await supabase.rpc("refresh_sales_order");
+  if (error) throw new Error(error.message);
+  return data ? ` · ปรับยอดสั่งซื้อ/มูลค่าตามใบ P−R−C ${data} โครงการ` : "";
 }
 
 export async function undoImport(batchId: string): Promise<CommitResult> {

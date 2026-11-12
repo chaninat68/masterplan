@@ -3,7 +3,8 @@ import Link from "next/link";
 import { requirePage } from "@/lib/auth";
 import { createClient, fetchAll } from "@/lib/supabase/server";
 import { fDate, fMonth, fNum } from "@/lib/format";
-import { addMonths, CATEGORY_LABEL, fM, forecast, nearTerm } from "@/lib/salesMeeting";
+import { addMonths, CATEGORY_LABEL, fM, forecast, isNearTerm, nearTerm } from "@/lib/salesMeeting";
+import { parseExpectedMonth } from "@/lib/import/salesMeeting";
 import { CardHead, Empty, Kpi, PageHeader } from "@/components/ui";
 import { InlineEdit } from "@/components/InlineEdit";
 import { SalesTarget } from "@/components/charts";
@@ -23,6 +24,7 @@ type Item = {
 
 const TABS = [
   { key: "active", label: "Base + Best", cats: ["base", "best"] },
+  { key: "near", label: "ปิดยอดสัปดาห์นี้", cats: ["base"] }, // งาน Base เดือนนี้ที่ระบุสัปดาห์/วัน (= ช่องประมาณการสัปดาห์)
   { key: "base", label: "Base", cats: ["base"] },
   { key: "best", label: "Best", cats: ["best"] },
   { key: "lost", label: "ไม่ได้งาน", cats: ["lost"] },
@@ -34,6 +36,14 @@ const ITEM_COLS = "id, salesperson, product, first_quote, last_quote, customer, 
 const num = (v: unknown) => Number(v ?? 0);
 const keyOf = (x: { salesperson: string; customer: string; project: string }) => `${x.salesperson}|${x.customer}|${x.project}`.replace(/\s+/g, "");
 const pct = (a: number, b: number) => (b ? (a / b) * 100 : null);
+/** สัปดาห์/วันที่ระบุในเดือนที่คาดว่าจะได้ ("พ.ย. Week 3" → "Week 3", "30 ต.ค." → "30 ต.ค.") — เฉพาะเมื่อยังตรงกับเดือนที่เลือกอยู่ */
+function weekTag(x: { expected_text: string; expected_month: string | null }, period: string): string {
+  const t = (x.expected_text ?? "").trim();
+  if (!x.expected_month || parseExpectedMonth(t, period) !== x.expected_month) return "";
+  const w = t.match(/week\s*(\d+)/i);
+  if (w) return `Week ${w[1]}`;
+  return /^\d{1,2}\s*[฀-๿]/.test(t) ? t : "";
+}
 
 export default async function MeetingPage(props: PageProps<"/meeting">) {
   const user = await requirePage("meeting");
@@ -105,6 +115,13 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
   });
   const ytd = sum(yearMonths.filter((m) => m <= period).map((m) => actualOf(m) ?? 0));
   const ytdTarget = sum(yearMonths.filter((m) => m <= period).map((m) => targetOf(m) ?? 0));
+  // ประมาณการ Base ตามผลิตภัณฑ์: เดือนนี้ = ยอดขายจริงของผลิตภัณฑ์ + งาน Base, เดือนถัดไป = งาน Base · ส่วนต่างจากยอดรวม (ยอดที่พิมพ์เพิ่ม/ไม่ระบุผลิตภัณฑ์) แสดงเป็นแถว "อื่นๆ"
+  const baseOfProd = (p: string, m: string, k: number) =>
+    (k === 0 ? pm(p, m)?.actual ?? 0 : 0) +
+    sum(pipeline.filter((x) => x.category === "base" && x.expected_month === m && x.product === p).map((x) => num(x.value)));
+  const baseRows = prodList.map((p) => ({ p, v: months.map((m, k) => baseOfProd(p, m, k)) }));
+  const other = months.map((_, k) => tFc[k].base - sum(baseRows.map((r) => r.v[k])));
+  if (other.some((v) => Math.abs(v) >= 5000)) baseRows.push({ p: "อื่นๆ", v: other });
   const yearTarget = sum(yearMonths.map((m) => targetOf(m) ?? 0));
   const periodTarget = targetOf(period);
 
@@ -128,9 +145,12 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
   const who = typeof sp.p === "string" ? sp.p : "";
   const shown = pipeline
     .filter((x) => !tab.cats.length || tab.cats.includes(x.category))
+    .filter((x) => tab.key !== "near" || isNearTerm(x, period))
     .filter((x) => !who || x.salesperson === who)
     .sort((a, b) => (a.expected_month ?? "9999").localeCompare(b.expected_month ?? "9999") || b.value - a.value);
-  const tabCount = (cats: string[]) => pipeline.filter((x) => (!cats.length || cats.includes(x.category)) && (!who || x.salesperson === who)).length;
+  const tabCount = (t: (typeof TABS)[number]) =>
+    pipeline.filter((x) => (!t.cats.length || t.cats.includes(x.category)) && (t.key !== "near" || isNearTerm(x, period)) && (!who || x.salesperson === who)).length;
+  const nearLabel = sel.remain_label.match(/สัปดาห์ที่\s*\d+/)?.[0];
   const qs = (o: Record<string, string>) => {
     const q = new URLSearchParams({ m: sel.meeting_date, tab: tab.key, ...(who ? { p: who } : {}), ...o });
     if (!q.get("p")) q.delete("p");
@@ -229,6 +249,19 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
             </table>
           </div>
           <div className="sub" style={{ marginTop: 10 }}>เฉลี่ยต่อเดือน {fM(ytd / Math.max(1, Number(period.slice(5, 7))))} ล้าน · เป้าทั้งปี {fM(yearTarget)} ล้าน</div>
+          <div className="lbl" style={{ margin: "18px 0 6px", fontWeight: 600 }}>ประมาณการยอดขาย (Base) ตามผลิตภัณฑ์</div>
+          <div className="tbl-wrap">
+            <table>
+              <thead><tr><th>ผลิตภัณฑ์</th>{months.map((m) => <th key={m} className="num">{mLabel(m)}</th>)}</tr></thead>
+              <tbody>
+                {baseRows.map((r) => <tr key={r.p}><td><b>{r.p}</b></td>{r.v.map((v, k) => <td key={k} className="num">{v ? fM(v) : <span className="muted">–</span>}</td>)}</tr>)}
+                <tr className="total"><td>รวม Base</td>{tFc.map((f, k) => <td key={k} className="num">{fM(f.base)}</td>)}</tr>
+                <tr><td className="muted">เป้า</td>{months.map((m) => <td key={m} className="num muted">{targetOf(m) != null ? fM(targetOf(m)) : "–"}</td>)}</tr>
+                <tr><td className="muted">% เป้า</td>{months.map((m, k) => { const t = targetOf(m); return <td key={m} className="num">{t ? <span className={tFc[k].base >= t ? "up" : "down"}>{fNum(pct(tFc[k].base, t), 0)}%</span> : <span className="muted">–</span>}</td>; })}</tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="sub" style={{ marginTop: 8 }}>{mLabel(period)} = ยอดขายจริง + งาน Base ที่คาดว่าจะได้เดือนนี้ · เดือนถัดไป = Σ งาน Base เดือนนั้น (ตรงกับตารางสรุปด้านบน)</div>
         </div>
       </div>
 
@@ -251,10 +284,10 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
       {!prev && <div className="mb"><LostCard lost={lost} /></div>}
 
       <div className="card" id="pipeline">
-        <CardHead title="รายการงานที่คาดว่าจะได้" sub={`${shown.length} รายการ · มูลค่ารวม ${fM(sum(shown.map((x) => x.value)))} ล้าน${canEdit ? " · คลิกช่องประเภท / เดือน / มูลค่า / สถานะ เพื่อแก้" : ""}`} />
+        <CardHead title="รายการงานที่คาดว่าจะได้" sub={`${shown.length} รายการ · มูลค่ารวม ${fM(sum(shown.map((x) => x.value)))} ล้าน${tab.key === "near" ? ` · งาน Base ${mLabel(period)} ที่ระบุสัปดาห์/วันปิดยอด` : ""}${canEdit ? " · คลิกช่องประเภท / เดือน / มูลค่า / สถานะ เพื่อแก้" : ""}`} />
         <div className="toolbar">
           <div className="seg">
-            {TABS.map((t) => <Link key={t.key} href={qs({ tab: t.key }) + "#pipeline"} className={t.key === tab.key ? "on" : ""} scroll={false}>{t.label}<span className="n">{tabCount(t.cats)}</span></Link>)}
+            {TABS.map((t) => <Link key={t.key} href={qs({ tab: t.key }) + "#pipeline"} className={t.key === tab.key ? "on" : ""} scroll={false}>{t.key === "near" && nearLabel ? `ปิดยอด${nearLabel}` : t.label}<span className="n">{tabCount(t)}</span></Link>)}
           </div>
           <div className="seg">
             <Link href={qs({ p: "" }) + "#pipeline"} className={!who ? "on" : ""} scroll={false}>ทุกคน</Link>
@@ -277,7 +310,7 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
                     <td className="num"><InlineEdit canEdit={canEdit} type="number" width={80} value={(x.value / 1e6).toFixed(2)} display={<b>{fM(x.value)}</b>} onSave={updatePipeline.bind(null, x.id, "value")} /></td>
                     <td><InlineEdit canEdit={canEdit} type="select" value={x.category} options={catOpts} display={<span className={`cat cat-${x.category || "none"}`}>{CATEGORY_LABEL[x.category]}</span>} onSave={updatePipeline.bind(null, x.id, "category")} /></td>
                     <td className="nowrap"><InlineEdit canEdit={canEdit} type="select" value={x.expected_month ?? ""} options={[{ value: "", label: "ไม่ระบุ" }, ...monthOpts]}
-                      display={x.expected_month ? <span className={x.expected_month < period ? "wk" : ""}>{mLabel(x.expected_month)}</span> : <span className="muted">{x.expected_text || "–"}</span>} onSave={updatePipeline.bind(null, x.id, "expected_month")} /></td>
+                      display={x.expected_month ? <span className={x.expected_month < period ? "wk" : ""}>{mLabel(x.expected_month)}{weekTag(x, period) && <span className="dc a" style={{ marginLeft: 6 }}>{weekTag(x, period)}</span>}</span> :<span className="muted">{x.expected_text || "–"}</span>} onSave={updatePipeline.bind(null, x.id, "expected_month")} /></td>
                     <td><span className="cell-sub" style={{ color: "var(--ink-2)", maxWidth: 260, whiteSpace: "normal" }}><InlineEdit canEdit={canEdit} value={x.status_note} placeholder="+ สถานะ" onSave={updatePipeline.bind(null, x.id, "status_note")} /></span></td>
                     <td className="nowrap">{fDate(x.start_date)}{x.duration && <span className="cell-sub">{x.duration}</span>}</td>
                     <td className="nowrap">{fDate(x.last_quote ?? x.first_quote)}</td>

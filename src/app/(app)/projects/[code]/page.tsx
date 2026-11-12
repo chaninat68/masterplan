@@ -11,6 +11,7 @@ import { InlineEdit } from "@/components/InlineEdit";
 import { SCurve } from "@/components/charts";
 import { updateProject } from "../actions";
 import { DayGrid, type DayLog } from "./DayGrid";
+import { PlanUpload } from "./PlanUpload";
 
 export async function generateMetadata(props: PageProps<"/projects/[code]">): Promise<Metadata> {
   return { title: (await props.params).code };
@@ -90,7 +91,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
         <div><label>สถานะ</label><InlineEdit canEdit={ce} type="select" value={p.status} display={<StatusBadge status={p.status} />} onSave={save("status")}
           options={Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }))} /></div>
         <div><label>กำหนดเริ่ม</label><InlineEdit canEdit={ce} type="date" value={p.start_date ?? ""} display={fDate(p.start_date)} onSave={save("start_date")} /></div>
-        <div><label>กำหนดเสร็จ</label><InlineEdit canEdit={ce} type="date" value={p.end_date ?? ""} display={fDate(p.end_date)} onSave={save("end_date")} /></div>
+        <div><label>กำหนดเสร็จ{plans.length > 0 && " · วันสุดท้ายของแผน"}</label><InlineEdit canEdit={ce && !plans.length} type="date" value={p.end_date ?? ""} display={fDate(p.end_date)} onSave={save("end_date")} /></div>
         <div><label>ยอดสั่งซื้อ (ต้น) · {p.order_source === "master_planning" ? "Master Planning" : p.order_source === "sales" ? "ใบ P−R−C" : "คิว-วัน"}</label><InlineEdit canEdit={ce} type="number" value={String(p.order_qty)} display={fNum(p.order_qty)} onSave={save("order_qty")} /></div>
         {showSales && <div><label>มูลค่าโครงการ (Vat)</label><InlineEdit canEdit={ce} type="number" value={String(p.contract_value)} display={fBaht2(p.contract_value)} onSave={save("contract_value")} /></div>}
         {showSales && <div><label>มูลค่าเฉลี่ย/ต้น</label><InlineEdit canEdit={ce} type="number" value={String(p.value_per_pile)} display={fBaht2(p.value_per_pile)} onSave={save("value_per_pile")} /></div>}
@@ -112,6 +113,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
         </div>
       )}
 
+      {ce && tab === "days" && <div className="plan-up"><PlanUpload code={code} /></div>}
       <div className="seg dtabs">
         <Link href={`/projects/${code}${at ? `?${at}` : ""}`} className={tab === "days" ? "on" : ""} scroll={false}>แผนเทียบผลงานรายวัน</Link>
         <Link href={`/projects/${code}?tab=curve${at ? `&${at}` : ""}`} className={tab === "curve" ? "on" : ""} scroll={false}>S-curve &amp; ขนาดเสา</Link>
