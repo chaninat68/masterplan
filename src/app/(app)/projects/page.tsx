@@ -54,7 +54,6 @@ export default async function ProjectsPage(props: PageProps<"/projects">) {
             <thead><tr><th>โครงการ / ลูกค้า</th><th>สถานะ</th><th className="num">ตอกแล้ว / สั่งซื้อ</th><th style={{ minWidth: 170 }}>ความคืบหน้า</th><th>เทียบแผน</th><th className="num">อัตรา/วัน</th><th>คาดเสร็จ</th></tr></thead>
             <tbody>
               {shown.map((p) => {
-                const late = p.eta && p.end_date && p.eta > p.end_date;
                 return (
                   <tr key={p.code} className="prow">
                     <td>
@@ -66,7 +65,7 @@ export default async function ProjectsPage(props: PageProps<"/projects">) {
                     <td><Progress pct={p.pct_done} planPct={p.pct_plan} hasPlan={p.has_plan} /></td>
                     <td><AheadChip ab={p.ahead_behind} hasPlan={p.has_plan} /></td>
                     <td className="num">{p.rate_per_day ? fNum(p.rate_per_day, 1) : "–"}</td>
-                    <td className="nowrap"><span className={late ? "wk" : ""}>{fDate(p.eta)}</span><span className="cell-sub">กำหนด {fDate(p.end_date)}</span></td>
+                    <td className="nowrap">{fDate(p.eta)}</td>
                   </tr>
                 );
               })}

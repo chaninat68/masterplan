@@ -4,7 +4,7 @@ import { findSheet, num, parseDate, sheetRows, str, type Cell } from "./excel";
 // ไฟล์ "ข้อมูล SO และใบเปลี่ยนแปลง" แท็บ dataรวม — P = เปิดยอดขาย, R/C = ลด/เปลี่ยนแปลง (จำนวน/มูลค่าเป็นค่าลบในไฟล์)
 
 export type SalesDoc = {
-  doc_type: "P" | "R" | "C"; doc_date: string; so_code: string; project_code: string; project_name: string;
+  doc_type: "P" | "R" | "C"; doc_date: string; so_code: string; project_code: string; project_name: string; site_address: string;
   customer_code: string; customer_name: string; customer_group: string; item_code: string; item_name: string;
   item_kind: string; product: string; group_product: string; section: number | null; standard: string;
   pile_form: string; length_m: number | null; qty: number; unit_price: number; install_fee: number; amount: number;
@@ -23,7 +23,7 @@ const GROUP: Record<string, string> = {
 export const normGroup = (g: string) => GROUP[g] ?? "ไม่ระบุ";
 
 const COLS = {
-  type: "เอกสาร", date: "วันที่", so: "รหัส SO", project: "รหัสโครงการ", pname: "โครงการ", ccode: "รหัสลูกค้า",
+  type: "เอกสาร", date: "วันที่", so: "รหัส SO", project: "รหัสโครงการ", pname: "โครงการ", addr: "ชื่อที่อยู่โครงการ", ccode: "รหัสลูกค้า",
   cname: "ชื่อลูกค้า", group: "กลุ่มลูกค้า", icode: "รหัสสินค้า/บริการ", iname: "ชื่อสินค้า/บริการ", section: "หน้าตัด",
   standard: "มาตรฐาน", form: "รูปแบบ", length: "ยาว", qty: "จำนวน", price: "ราคาต่อหน่วย", fee: "ค่าติดตั้ง",
   amount: "มูลค่า", appr: "สถานะ", work: "สถานะงาน", creg: "วันที่ลงทะเบียนลูกค้า", kind: "ประเภทรายการ",
@@ -33,7 +33,7 @@ const COLS = {
 
 // ตำแหน่งคอลัมน์ (เริ่ม 0) ของแท็บ dataรวม รูปแบบมาตรฐาน 65 คอลัมน์ (A–BM)
 const STD_POS: Record<keyof typeof COLS, number> = {
-  type: 0, date: 1, so: 2, project: 3, pname: 4, ccode: 6, cname: 7, group: 8, icode: 9, iname: 10, section: 11,
+  type: 0, date: 1, so: 2, project: 3, pname: 4, addr: 5, ccode: 6, cname: 7, group: 8, icode: 9, iname: 10, section: 11,
   standard: 12, form: 13, length: 14, qty: 17, price: 18, fee: 19, amount: 20, appr: 25, work: 26, creg: 28,
   construction: 31, kind: 33, m3: 36, product: 37, gp: 41, isNew: 42, sales: 44, svc: 46, province: 63,
 };
@@ -66,7 +66,7 @@ export function parseSales(wb: XLSX.WorkBook): SalesParse {
       customers.set(ccode, { code: ccode, name: str(g(r, "cname")) || ccode, customer_group: group, registered_at: parseDate(g(r, "creg")) || null });
     docs.push({
       doc_type: t, doc_date: d, so_code: str(g(r, "so")), project_code: str(g(r, "project")).toUpperCase(),
-      project_name: str(g(r, "pname")), customer_code: ccode, customer_name: str(g(r, "cname")), customer_group: group,
+      project_name: str(g(r, "pname")), site_address: str(g(r, "addr")).replace(/\s+/g, " "), customer_code: ccode, customer_name: str(g(r, "cname")), customer_group: group,
       item_code: str(g(r, "icode")), item_name: str(g(r, "iname")), item_kind: str(g(r, "kind")),
       product: str(g(r, "product")), group_product: str(g(r, "gp")), section: num(g(r, "section")),
       standard: str(g(r, "standard")), pile_form: str(g(r, "form")), length_m: num(g(r, "length")),

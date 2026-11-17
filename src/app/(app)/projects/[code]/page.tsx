@@ -11,6 +11,7 @@ import { InlineEdit } from "@/components/InlineEdit";
 import { SCurve } from "@/components/charts";
 import { updateProject } from "../actions";
 import { DayGrid, type DayLog } from "./DayGrid";
+import { Icon } from "@/components/Icon";
 import { PlanUpload } from "./PlanUpload";
 
 export async function generateMetadata(props: PageProps<"/projects/[code]">): Promise<Metadata> {
@@ -72,6 +73,8 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
   const soQty = so.filter((s) => s.item_kind !== "บริการ" && s.group_product !== "Service" && s.group_product !== "").reduce((s, x) => s + Number(x.qty), 0);
   const soAmt = so.reduce((s, x) => s + Number(x.amount), 0);
   const hasP = so.some((s) => s.doc_type === "P");
+  // ลูกค้า / ชื่อโครงการ / หน่วยงาน ซิงก์จากไฟล์ SO ทุกครั้งที่นำเข้า → แก้ในเว็บไม่ได้ (จะถูกเขียนทับ)
+  const fromSo = so.length > 0;
   const save = (field: Parameters<typeof updateProject>[1]) => updateProject.bind(null, code, field);
   const ce = user.canEdit;
 
@@ -83,9 +86,9 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
         asof={asof} latest={latest} readOnly={!ce} right={<StatusBadge status={p.status} />} />
 
       <div className="fields mb">
-        <div><label>ลูกค้า</label><InlineEdit canEdit={ce} value={p.customer_name} onSave={save("customer_name")} /></div>
-        <div><label>ชื่อโครงการ</label><InlineEdit canEdit={ce} value={p.project_name} onSave={save("project_name")} /></div>
-        <div><label>หน่วยงาน</label><InlineEdit canEdit={ce} value={agency} placeholder="+ ระบุหน่วยงาน" onSave={save("agency")} /></div>
+        <div><label>ลูกค้า</label><InlineEdit canEdit={ce && !fromSo} value={p.customer_name} onSave={save("customer_name")} /></div>
+        <div><label>ชื่อโครงการ</label><InlineEdit canEdit={ce && !fromSo} value={p.project_name} onSave={save("project_name")} /></div>
+        <div><label>หน่วยงาน</label><InlineEdit canEdit={ce && !fromSo} value={agency} placeholder="+ ระบุหน่วยงาน" onSave={save("agency")} /></div>
         <div><label>PM</label><InlineEdit canEdit={ce} value={p.pm} onSave={save("pm")} /></div>
         <div><label>Sales</label><InlineEdit canEdit={ce} value={p.sales} onSave={save("sales")} /></div>
         <div><label>สถานะ</label><InlineEdit canEdit={ce} type="select" value={p.status} display={<StatusBadge status={p.status} />} onSave={save("status")}
@@ -104,7 +107,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
         <div><label>แผนสะสมถึง {fDateShort(asof)}</label><b>{fNum(p.plan_to_date, 1)}</b></div>
         <div><label>เทียบแผน</label><b><AheadChip ab={p.ahead_behind} hasPlan={p.has_plan} /></b></div>
         <div><label>อัตรา 14 วัน</label><b>{p.rate_per_day ? fNum(p.rate_per_day, 1) : "–"}</b> <span className="muted">ต้น/วัน</span></div>
-        <div><label>คาดว่าเสร็จ</label><b>{fDate(p.eta)}</b></div>
+        <div><label>คาดว่าเสร็จ{p.has_plan ? " · ตามแผน" : ""}</label><b>{fDate(p.eta)}</b></div>
       </div>
 
       {showSales && hasP && Math.abs(soQty - p.order_qty) >= 0.5 && p.order_source === "master_planning" && (
@@ -113,7 +116,12 @@ export default async function ProjectPage(props: PageProps<"/projects/[code]">) 
         </div>
       )}
 
-      {ce && tab === "days" && <div className="plan-up"><PlanUpload code={code} /></div>}
+      {tab === "days" && (
+        <div className="plan-up">
+          <a className="btn ghost sm" href={`/api/export/project-plan/${code}`} title="ดาวน์โหลดแผนเป็น Excel — แก้แล้วอัปโหลดกลับได้"><Icon name="dl" /> ดาวน์โหลดแผน Excel</a>
+          {ce && <PlanUpload code={code} />}
+        </div>
+      )}
       <div className="seg dtabs">
         <Link href={`/projects/${code}${at ? `?${at}` : ""}`} className={tab === "days" ? "on" : ""} scroll={false}>แผนเทียบผลงานรายวัน</Link>
         <Link href={`/projects/${code}?tab=curve${at ? `&${at}` : ""}`} className={tab === "curve" ? "on" : ""} scroll={false}>S-curve &amp; ขนาดเสา</Link>

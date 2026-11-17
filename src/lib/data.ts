@@ -13,6 +13,8 @@ export type Progress = {
   ahead_behind: number; remain_qty: number; rate_per_day: number; eta: string | null; pct_done: number;
   pct_plan: number; value_done: number; value_remain: number;
 };
+/** eta = คาดว่าเสร็จ: โครงการที่ยังไม่จบและมีแผน = วันสุดท้ายที่มีตัวเลขแผน (= end_date จาก trigger, ผู้ใช้สั่ง 17 พ.ย. 2569)
+ *  ไม่มีแผน/จบแล้ว = ค่าจาก view (ตามอัตราตอก) */
 export type ProjectRow = Project & Progress;
 
 // มูลค่าเงิน (contract_value, value_per_pile) อ่านจาก v_project_money เท่านั้น — ฝ่ายตอก/ฝ่ายผลิตได้แถวว่าง = 0
@@ -45,12 +47,13 @@ export async function getProjects(supabase: Supa, filter?: { codes?: string[]; s
   const mm = new Map(money.map((m) => [m.code, m]));
   return projects.map((p) => {
     const g = pm.get(p.code);
+    const open = p.status !== "completed" && p.status !== "cancelled";
     return {
       ...p,
       order_qty: n(p.order_qty), contract_value: n(mm.get(p.code)?.contract_value), value_per_pile: n(mm.get(p.code)?.value_per_pile),
       project_code: p.code, done_qty: n(g?.done_qty), plan_to_date: n(g?.plan_to_date), plan_total: n(g?.plan_total),
       has_plan: !!g?.has_plan, ahead_behind: n(g?.ahead_behind), remain_qty: n(g?.remain_qty), rate_per_day: n(g?.rate_per_day),
-      eta: g?.eta ?? null, pct_done: n(g?.pct_done), pct_plan: n(g?.pct_plan), value_done: n(g?.value_done), value_remain: n(g?.value_remain),
+      eta: open && g?.has_plan && p.end_date ? p.end_date : g?.eta ?? null, pct_done: n(g?.pct_done), pct_plan: n(g?.pct_plan), value_done: n(g?.value_done), value_remain: n(g?.value_remain),
     };
   });
 }
