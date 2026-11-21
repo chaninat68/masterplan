@@ -196,7 +196,12 @@ export async function commitImport(kindRaw: string, formData: FormData): Promise
       });
       if (error) throw new Error(error.message);
       message = `บันทึกเอกสารขาย ${Number(data.added).toLocaleString("th-TH")} รายการ (แทนที่ของเดิม ${data.replaced})`;
+      // โครงการ "พร้อมตอก" ที่มีใบ P แต่ยังไม่อยู่ในระบบ → สร้างเป็นรอเริ่ม ให้ฝ่ายวางแผนวางแผน (ชื่อ/ยอดตาม SO ใน refresh_sales_order)
+      const created = await supabase.rpc("create_projects_from_sales");
+      if (created.error) throw new Error(created.error.message);
       message += await syncSalesOrder(supabase);
+      const codes = (created.data ?? []) as string[];
+      if (codes.length) message += ` · โครงการใหม่รอวางแผน ${codes.length} โครงการ: ${codes.join(", ")}`;
     }
     revalidatePath("/", "layout");
     return { ok: true, message };

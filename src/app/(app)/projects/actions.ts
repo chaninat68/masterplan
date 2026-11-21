@@ -146,3 +146,32 @@ export async function setSetting(key: "runway_weeks" | "rate_window_days", value
     if (error) throw new Error(error.message);
   }, ["/sales", "/settings", "/overview"]);
 }
+
+const NewProject = z.object({
+  code: z.string().trim().toUpperCase().pipe(Code),
+  project_name: z.string().trim().min(1, "ระบุชื่อโครงการ").max(300),
+  customer_name: z.string().trim().max(300),
+  sales: z.string().trim().max(100),
+  pm: z.string().trim().max(100),
+  status: z.enum(["ongoing", "on_hand", "hold"]),
+  order_qty: Qty,
+});
+
+/** เพิ่มโครงการเอง (admin/planning) — โครงการที่มีใบ SO จะได้ชื่อ/ยอดสั่งซื้อตาม SO ตอนนำเข้า SO ครั้งถัดไป */
+export async function addProject(input: z.input<typeof NewProject>): Promise<ActionResult> {
+  return run(async () => {
+    const x = NewProject.parse(input);
+    const supabase = await createClient();
+    const { error } = await supabase.from("projects").insert({ ...x, order_source: "master_planning", note: "เพิ่มในเว็บ" });
+    if (error) throw new Error(error.code === "23505" ? `มีโครงการ ${x.code} อยู่แล้ว` : error.message);
+  }, ["/projects", "/timeline"]);
+}
+
+/** ลบโครงการ — เฉพาะที่ยังไม่มีผลงานตอก (ตรวจใน delete_project) แผน/หมายเหตุลบตาม และไม่ถูกสร้างกลับจากไฟล์ SO */
+export async function deleteProject(code: string): Promise<ActionResult> {
+  return run(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("delete_project", { p_code: Code.parse(code) });
+    if (error) throw new Error(error.message);
+  }, ["/projects", "/timeline"]);
+}
