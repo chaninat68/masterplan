@@ -8,6 +8,7 @@ import { getProjects, type ProjectRow } from "@/lib/data";
 import { addDays, dayRange, dow, fDate, fMonth, fNum, TH_DAYS, todayBangkok } from "@/lib/format";
 import { addMonths } from "@/lib/salesMeeting";
 import { Empty, PageHeader } from "@/components/ui";
+import { Icon } from "@/components/Icon";
 import { ScrollToToday } from "./ScrollToToday";
 import { TimelinePdf } from "./TimelinePdf";
 
@@ -110,6 +111,7 @@ export default async function TimelinePage(props: PageProps<"/timeline">) {
           <form action="/timeline">
             <input className="input" name="q" defaultValue={q} placeholder="ค้นหารหัส / ลูกค้า / PM / Sales…" style={{ width: 230 }} />
           </form>
+          <Link href="/timeline/weekly" className="btn ghost sm"><Icon name="doc" />รายงานประจำสัปดาห์ (PDF)</Link>
           {all.length > 0 && <TimelinePdf fileName={`Project Timeline ${today}`} />}
         </div>
 

@@ -875,3 +875,60 @@ table.tl{border-collapse:separate;border-spacing:0;width:max-content;font-size:1
 .add-proj .add-grid .wide{grid-column:1/-1}
 .add-proj .input{width:100%;color:var(--ink);font-size:14px}
 @media (max-width:560px){.add-proj .add-grid{grid-template-columns:1fr}}
+
+/* รายงานประจำสัปดาห์ A3 แนวนอน (/timeline/weekly) — กระดาษโทนสว่างเสมอ หน่วย mm ตามกระดาษจริง */
+.wk-tools{flex-wrap:wrap}
+.wk-scroll{overflow:auto;padding-bottom:12px}
+.wk{display:flex;flex-direction:column;gap:18px;width:1527px}
+.wk-page{width:1527px;height:1062px;overflow:hidden;background:#fff;box-shadow:0 2px 14px rgba(10,20,40,.18);color:#172033;font-family:var(--font-prompt),sans-serif}
+.wk-in{width:1527px;transform-origin:0 0;padding:0}
+.wk header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2.5px solid #1d4ed8;padding-bottom:2.5mm;margin-bottom:2.5mm}
+.wk h1{margin:0;font-size:17pt;font-weight:700;color:#172033;letter-spacing:-.01em}
+.wk header p{margin:1mm 0 0;font-size:9pt;color:#4b5568}
+.wk .meta{text-align:right;font-size:9pt;color:#4b5568;display:flex;flex-direction:column}
+.wk .meta b{font-size:12pt;color:#172033}
+.wk-top{display:flex;justify-content:space-between;align-items:flex-start;gap:4mm;margin-bottom:2mm}
+.wk-kpis{display:flex;gap:3mm;flex-wrap:wrap}
+.wk-kpi{font-size:9pt;padding:1.2mm 3mm;border-radius:2mm;background:#f3f5f9;border-left:3px solid;color:#2a3346}
+.wk-kpi b{margin-right:1.5mm}
+.wk-kpi.on{border-color:#1d4ed8}.wk-kpi.oh{border-color:#d97706}.wk-kpi.hd{border-color:#6b7280}
+.wk h3{font-size:10.5pt;margin:3mm 0 1.2mm;padding-left:2mm;border-left:3px solid;color:#172033}
+.wk h3.oh{border-color:#d97706}.wk h3.hd{border-color:#6b7280}
+.wk-legend{display:flex;gap:4mm;font-size:7.5pt;color:#4b5568;white-space:nowrap;padding-top:1.5mm}
+.wk-legend span{display:inline-flex;align-items:center;gap:1.2mm}
+.wk-legend i{width:3.2mm;height:2.6mm;border-radius:.6mm;display:inline-block;border:1px solid #cfd6e2}
+.wk-legend .p{background:#dbe6fb}.wk-legend .ok{background:#d9f2e1}.wk-legend .lo{background:#fdecc8}.wk-legend .miss{background:#fde2e2}.wk-legend .today{background:#1d4ed8;border-color:#1d4ed8}
+.wk-grid{width:100%;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums;background:#fff}
+.wk-grid th,.wk-grid td{border:.4px solid #d5dbe6;padding:0 .6mm;vertical-align:middle;color:#172033}
+.wk-grid thead th{background:#eef2f8;font-weight:600;font-size:7pt;color:#2a3346;line-height:1.15;text-align:center}
+.wk-grid thead th small{display:block;font-weight:400;color:#6b7487;font-size:6pt}
+.wk-grid .c-no{text-align:center;color:#6b7487;font-size:7pt}
+.wk-grid .c-name{font-size:7.4pt;line-height:1.2}
+.wk-grid .c-name b,.wk-grid .c-name span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-grid .c-name b{font-weight:600}
+.wk-grid .c-name span,.wk-grid .c-pm span{color:#5b6477;font-size:6.8pt}
+.wk-grid .c-code{font-weight:600;font-size:7.4pt;text-align:center;color:#1d4ed8}
+.wk-grid .c-pm{font-size:7pt;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-grid .c-pm span{display:block}
+.wk-grid .c-n{text-align:right;font-size:7.6pt}
+.wk-grid .c-d{text-align:center;font-size:7pt;white-space:nowrap}
+.wk-grid .b,.wk-grid .ab{font-weight:700}
+.wk-grid .ab.g{color:#15803d}.wk-grid .ab.r{color:#c2410c}.wk-grid .ab.na{color:#8b93a5;font-weight:400;font-size:6.4pt}
+.wk-grid .c-row{font-size:6.4pt;color:#5b6477;text-align:center}
+.wk-grid .mh{font-size:7.5pt;background:#e1e8f4}
+.wk-grid .dh{font-size:6.8pt;padding:.3mm 0}
+.wk-grid .dh small{font-size:5.4pt}
+.wk-grid .dh.sun{color:#c81e1e}
+.wk-grid .dh.pastd{background:#fbf4e6}
+.wk-grid .dh.today{background:#1d4ed8;color:#fff}
+.wk-grid .dh.today small{color:#dbe6fb}
+.wk-grid .wd{text-align:center;font-size:6.6pt;padding:0;height:4.3mm}
+.wk-grid .wd small{font-size:5pt;letter-spacing:-.02em}
+.wk-grid .wd.sun{background:#fbf2f2}
+.wk-grid .wd.p{background:#dbe6fb;color:#1e3a8a}
+.wk-grid .wd.ok{background:#d9f2e1;color:#166534;font-weight:600}
+.wk-grid .wd.lo{background:#fdecc8;color:#92400e;font-weight:600}
+.wk-grid .wd.miss{background:#fde2e2}
+.wk-grid .wd.today{border-left:1.4px solid #1d4ed8}
+.wk-grid tr.ac td,.wk-grid tr.pl td[rowspan]{border-bottom:.9px solid #9aa5b8}
+.wk-grid td.empty{text-align:center;color:#8b93a5;font-size:8pt;padding:2mm}
