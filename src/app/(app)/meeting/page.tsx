@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requirePage } from "@/lib/auth";
 import { createClient, fetchAll } from "@/lib/supabase/server";
 import { fDate, fMonth, fNum } from "@/lib/format";
-import { addMonths, CATEGORY_LABEL, fM, forecast, isNearTerm, nearTerm } from "@/lib/salesMeeting";
+import { addMonths, CATEGORY_LABEL, fM, forecast, isNearTerm, LOST_REASONS, LOST_REASON_LABEL, lostReason, nearTerm } from "@/lib/salesMeeting";
 import { parseExpectedMonth } from "@/lib/import/salesMeeting";
 import { CardHead, Empty, Kpi, PageHeader } from "@/components/ui";
 import { InlineEdit } from "@/components/InlineEdit";
@@ -19,7 +19,7 @@ type ProductMonth = { product: string; month: string; actual: number | null; tar
 type Item = {
   id: number; salesperson: string; product: string; first_quote: string | null; last_quote: string | null; customer: string;
   project: string; value: number; category: string; expected_month: string | null; expected_text: string; status_note: string;
-  start_date: string | null; duration: string;
+  start_date: string | null; duration: string; lost_reason: string;
 };
 
 const TABS = [
@@ -32,7 +32,7 @@ const TABS = [
   { key: "all", label: "ทั้งหมด", cats: [] as string[] },
 ];
 const PRODUCTS = ["IP", "HC", "PC"];
-const ITEM_COLS = "id, salesperson, product, first_quote, last_quote, customer, project, value, category, expected_month, expected_text, status_note, start_date, duration";
+const ITEM_COLS = "id, salesperson, product, first_quote, last_quote, customer, project, value, category, expected_month, expected_text, status_note, start_date, duration, lost_reason";
 const num = (v: unknown) => Number(v ?? 0);
 const keyOf = (x: { salesperson: string; customer: string; project: string }) => `${x.salesperson}|${x.customer}|${x.project}`.replace(/\s+/g, "");
 const pct = (a: number, b: number) => (b ? (a / b) * 100 : null);
@@ -143,32 +143,37 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
 
   const tab = TABS.find((t) => t.key === sp.tab) ?? TABS[0];
   const who = typeof sp.p === "string" ? sp.p : "";
-  const shown = pipeline
-    .filter((x) => !tab.cats.length || tab.cats.includes(x.category))
-    .filter((x) => tab.key !== "near" || isNearTerm(x, period))
-    .filter((x) => !who || x.salesperson === who)
+  // เลือกเดือนที่คาดว่าจะได้ (ผู้ใช้สั่ง 27 พ.ย. 2569): "YYYY-MM-01" หรือ "none" = ไม่ระบุเดือน
+  const mo = typeof sp.mo === "string" && /^(\d{4}-\d{2}-01|none)$/.test(sp.mo) ? sp.mo : "";
+  const monthKey = (x: Item) => x.expected_month ?? "none";
+  const inTab = (t: (typeof TABS)[number], x: Item) =>
+    (!t.cats.length || t.cats.includes(x.category)) && (t.key !== "near" || isNearTerm(x, period)) && (!who || x.salesperson === who);
+  const tabItems = pipeline.filter((x) => inTab(tab, x));
+  const shown = tabItems
+    .filter((x) => !mo || monthKey(x) === mo)
     .sort((a, b) => (a.expected_month ?? "9999").localeCompare(b.expected_month ?? "9999") || b.value - a.value);
-  const tabCount = (t: (typeof TABS)[number]) =>
-    pipeline.filter((x) => (!t.cats.length || t.cats.includes(x.category)) && (t.key !== "near" || isNearTerm(x, period)) && (!who || x.salesperson === who)).length;
+  const tabCount = (t: (typeof TABS)[number]) => pipeline.filter((x) => inTab(t, x) && (!mo || monthKey(x) === mo)).length;
+  const monthChips = [...new Set([...tabItems.map(monthKey), ...(mo ? [mo] : [])])]
+    .sort((a, b) => (a === "none" ? 1 : b === "none" ? -1 : a.localeCompare(b)))
+    .map((k) => ({ key: k, label: k === "none" ? "ไม่ระบุเดือน" : mLabel(k), n: tabItems.filter((x) => monthKey(x) === k).length }));
   const nearLabel = sel.remain_label.match(/สัปดาห์ที่\s*\d+/)?.[0];
   const qs = (o: Record<string, string>) => {
-    const q = new URLSearchParams({ m: sel.meeting_date, tab: tab.key, ...(who ? { p: who } : {}), ...o });
+    const q = new URLSearchParams({ m: sel.meeting_date, tab: tab.key, ...(who ? { p: who } : {}), ...(mo ? { mo } : {}), ...o });
     if (!q.get("p")) q.delete("p");
+    if (!q.get("mo")) q.delete("mo");
     return `/meeting?${q}`;
   };
   const monthOpts = Array.from({ length: 15 }, (_, i) => addMonths(period, i - 2)).map((m) => ({ value: m, label: mLabel(m) }));
   const catOpts = (["base", "best", "lost", "excluded", "cancelled", ""] as const).map((c) => ({ value: c, label: CATEGORY_LABEL[c] }));
   const salesNames = [...new Set([...people.map((p) => p.salesperson), ...pipeline.map((x) => x.salesperson)].filter(Boolean))];
 
-  // สาเหตุที่ไม่ได้งาน
-  const lostBy = new Map<string, { n: number; v: number }>();
-  for (const x of pipeline.filter((x) => x.category === "lost")) {
-    const k = x.status_note || "ไม่ระบุ";
-    const o = lostBy.get(k) ?? { n: 0, v: 0 };
-    o.n++; o.v += x.value;
-    lostBy.set(k, o);
-  }
-  const lost = [...lostBy.entries()].sort((a, b) => b[1].v - a[1].v);
+  // สาเหตุที่ไม่ได้งาน 4 กลุ่ม (ผู้ใช้สั่ง 27 พ.ย. 2569) — แสดงครบทุกกลุ่มตามลำดับที่กำหนด
+  const lostItems = pipeline.filter((x) => x.category === "lost");
+  const lost: LostGroup[] = LOST_REASONS.map((r) => {
+    const xs = lostItems.filter((x) => lostReason(x) === r.key);
+    return { key: r.key, label: r.label, n: xs.length, v: sum(xs.map((x) => x.value)) };
+  });
+  const reasonOpts = [{ value: "", label: "อัตโนมัติจากสถานะ" }, ...LOST_REASONS.map((r) => ({ value: r.key, label: r.label }))];
 
   return (
     <>
@@ -293,6 +298,10 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
             <Link href={qs({ p: "" }) + "#pipeline"} className={!who ? "on" : ""} scroll={false}>ทุกคน</Link>
             {salesNames.map((n) => <Link key={n} href={qs({ p: n }) + "#pipeline"} className={who === n ? "on" : ""} scroll={false}>{n.replace(/^คุณ/, "")}</Link>)}
           </div>
+          <div className="seg">
+            <Link href={qs({ mo: "" }) + "#pipeline"} className={!mo ? "on" : ""} scroll={false}>ทุกเดือน<span className="n">{tabItems.length}</span></Link>
+            {monthChips.map((c) => <Link key={c.key} href={qs({ mo: c.key }) + "#pipeline"} className={mo === c.key ? "on" : ""} scroll={false}>{c.label}<span className="n">{c.n}</span></Link>)}
+          </div>
           <div className="grow" />
           {canEdit && <AddItem meetingId={sel.id} people={salesNames} months={monthOpts.slice(2)} />}
         </div>
@@ -308,7 +317,8 @@ export default async function MeetingPage(props: PageProps<"/meeting">) {
                     <td><span className="cell-sub" style={{ color: "var(--ink)", maxWidth: 320 }}><InlineEdit canEdit={canEdit} value={x.project} onSave={updatePipeline.bind(null, x.id, "project")} /></span><span className="cell-sub" style={{ maxWidth: 320 }}><InlineEdit canEdit={canEdit} value={x.customer} placeholder="+ ลูกค้า" onSave={updatePipeline.bind(null, x.id, "customer")} /></span></td>
                     <td>{x.product}</td>
                     <td className="num"><InlineEdit canEdit={canEdit} type="number" width={80} value={(x.value / 1e6).toFixed(2)} display={<b>{fM(x.value)}</b>} onSave={updatePipeline.bind(null, x.id, "value")} /></td>
-                    <td><InlineEdit canEdit={canEdit} type="select" value={x.category} options={catOpts} display={<span className={`cat cat-${x.category || "none"}`}>{CATEGORY_LABEL[x.category]}</span>} onSave={updatePipeline.bind(null, x.id, "category")} /></td>
+                    <td><InlineEdit canEdit={canEdit} type="select" value={x.category} options={catOpts} display={<span className={`cat cat-${x.category || "none"}`}>{CATEGORY_LABEL[x.category]}</span>} onSave={updatePipeline.bind(null, x.id, "category")} />
+                      {x.category === "lost" && <span className="cell-sub"><InlineEdit canEdit={canEdit} type="select" value={x.lost_reason ?? ""} options={reasonOpts} display={<span className="dc r">{LOST_REASON_LABEL[lostReason(x)]}</span>} onSave={updatePipeline.bind(null, x.id, "lost_reason")} /></span>}</td>
                     <td className="nowrap"><InlineEdit canEdit={canEdit} type="select" value={x.expected_month ?? ""} options={[{ value: "", label: "ไม่ระบุ" }, ...monthOpts]}
                       display={x.expected_month ? <span className={x.expected_month < period ? "wk" : ""}>{mLabel(x.expected_month)}{weekTag(x, period) && <span className="dc a" style={{ marginLeft: 6 }}>{weekTag(x, period)}</span>}</span> :<span className="muted">{x.expected_text || "–"}</span>} onSave={updatePipeline.bind(null, x.id, "expected_month")} /></td>
                     <td><span className="cell-sub" style={{ color: "var(--ink-2)", maxWidth: 260, whiteSpace: "normal" }}><InlineEdit canEdit={canEdit} value={x.status_note} placeholder="+ สถานะ" onSave={updatePipeline.bind(null, x.id, "status_note")} /></span></td>
@@ -335,14 +345,25 @@ function Pct({ a, b }: { a: number; b: number }) {
   return <div className="prog sm"><div className="bar"><i style={{ width: `${Math.min(100, v).toFixed(1)}%`, background: v >= 100 ? "var(--good)" : v >= 70 ? "var(--s1)" : "var(--warn)" }} /></div><span>{fNum(v)}%</span></div>;
 }
 
-function LostCard({ lost }: { lost: [string, { n: number; v: number }][] }) {
+type LostGroup = { key: string; label: string; n: number; v: number };
+
+/** สาเหตุที่ไม่ได้งาน 4 กลุ่ม: จำนวน / มูลค่า / สัดส่วนมูลค่า */
+function LostCard({ lost }: { lost: LostGroup[] }) {
+  const tn = lost.reduce((s, o) => s + o.n, 0), tv = lost.reduce((s, o) => s + o.v, 0);
   return (
     <div className="card">
-      <CardHead title="สาเหตุที่ไม่ได้งาน" sub={`${lost.reduce((s, [, o]) => s + o.n, 0)} รายการ · ${fM(lost.reduce((s, [, o]) => s + o.v, 0))} ล้าน`} />
-      {lost.length ? (
+      <CardHead title="สาเหตุที่ไม่ได้งาน" sub={`${tn} รายการ · ${fM(tv)} ล้าน · คลิกแท็บ "ไม่ได้งาน" ด้านล่างเพื่อดู/เปลี่ยนกลุ่มรายโครงการ`} />
+      {tn ? (
         <div className="list">
-          {lost.slice(0, 6).map(([k, o]) => (
-            <div key={k} className="li"><div className="t"><b>{k}</b><span>{o.n} รายการ</span></div><span className="dc r">{fM(o.v)} ล้าน</span></div>
+          {lost.map((o, i) => (
+            <div key={o.key} className="li">
+              <div className="t" style={{ flex: 1 }}>
+                <b>{i + 1}. {o.label}</b>
+                <span>{o.n} รายการ · {tv ? fNum((o.v / tv) * 100) : 0}% ของมูลค่า</span>
+                <div className="prog sm" style={{ marginTop: 4 }}><div className="bar"><i style={{ width: `${tv ? (o.v / tv) * 100 : 0}%`, background: "var(--bad)" }} /></div></div>
+              </div>
+              <span className={o.n ? "dc r" : "muted"}>{fM(o.v)} ล้าน</span>
+            </div>
           ))}
         </div>
       ) : <Empty>ไม่มีรายการไม่ได้งาน</Empty>}

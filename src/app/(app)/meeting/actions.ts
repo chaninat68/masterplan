@@ -32,6 +32,7 @@ const FIELDS = {
   value: Million,
   customer: z.string().trim().max(300),
   project: z.string().trim().max(300),
+  lost_reason: z.enum(["", "price", "urgent", "delayed", "customer_lost"]),
 } as const;
 export type PipelineField = keyof typeof FIELDS;
 

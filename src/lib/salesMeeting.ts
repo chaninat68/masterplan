@@ -37,5 +37,24 @@ export const CATEGORY_LABEL: Record<string, string> = {
   base: "Base", best: "Best", lost: "ไม่ได้งาน", excluded: "ไม่บวกเข้ายอด", cancelled: "ยกเลิก", "": "ไม่ระบุ",
 };
 
+/** กลุ่มสาเหตุที่ไม่ได้งาน (ผู้ใช้สั่ง 27 พ.ย. 2569) — เรียงตามที่ผู้ใช้กำหนด */
+export const LOST_REASONS = [
+  { key: "price", label: "ราคาสูง" },
+  { key: "urgent", label: "ต้องการสินค้าในเวลาเร่งด่วน" },
+  { key: "delayed", label: "ลูกค้าชะลอโครงการ" },
+  { key: "customer_lost", label: "ลูกค้าไม่ได้งาน" },
+] as const;
+export type LostReason = (typeof LOST_REASONS)[number]["key"];
+export const LOST_REASON_LABEL = Object.fromEntries(LOST_REASONS.map((r) => [r.key, r.label])) as Record<LostReason, string>;
+/** สาเหตุที่เลือกเองในเว็บ หรือจัดกลุ่มอัตโนมัติจากข้อความสถานะ (ไม่เข้ากลุ่มอื่น = ลูกค้าไม่ได้งาน) */
+export function lostReason(x: { lost_reason?: string | null; status_note?: string | null }): LostReason {
+  if (x.lost_reason && x.lost_reason in LOST_REASON_LABEL) return x.lost_reason as LostReason;
+  const t = (x.status_note ?? "").replace(/\s+/g, "");
+  if (/ราคา/.test(t)) return "price";
+  if (/เร่ง|ด่วน/.test(t)) return "urgent";
+  if (/ชะลอ|เลื่อน/.test(t)) return "delayed";
+  return "customer_lost";
+}
+
 /** ล้านบาท 2 ตำแหน่ง (รูปแบบเดียวกับไฟล์ประชุม) */
 export const fM = (n: number | null | undefined) => (n == null ? "–" : (n / 1e6).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));

@@ -89,7 +89,8 @@ export function parseSalesMeeting(wb: XLSX.WorkBook, fileName: string, today: st
   const H = S[hr].map((c) => flat(str(c))), H2 = (S[hr + 1] ?? []).map((c) => str(c).replace(/[()]/g, "").trim());
   const targetCol = H.findIndex((h) => h.startsWith("เป้า"));
   const weekCols = H.map((h, i) => (/^ยอดขายสัปดาห์ที่\d/.test(h) ? i : -1)).filter((i) => i >= 0);
-  const remainCol = H.findIndex((h, i) => h.startsWith("ประมาณการ") && /\d+-\d+/.test(H2[i] ?? ""));
+  // ช่องประมาณการสัปดาห์: หัว "ประมาณการสัปดาห์ที่ N" หรือมีช่วงวันที่ใต้หัว ("23-29 พ.ย." / วันเดียว "30 พ.ย." ตอนสัปดาห์สุดท้ายของเดือน)
+  const remainCol = H.findIndex((h, i) => h.startsWith("ประมาณการ") && (/^ประมาณการสัปดาห์ที่\d/.test(h) || /\d+-\d+/.test(H2[i] ?? "")));
   const people: SMPerson[] = [];
   for (let r = hr + 2; r < S.length; r++) {
     const name = str(S[r]?.[pc]);
